@@ -7,13 +7,16 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 import { idParamsSchema, patientParamsSchema } from '../validators/commonValidators.js';
 import { createPatientCardSchema, verifyPatientCardSchema } from '../validators/patientCardValidators.js';
 import { createVitalSchema } from '../validators/vitalValidators.js';
+import { authenticate, requireRole } from '../middleware/authenticate.js';
+import { requirePatientOwnership, requirePatientRecordAccess } from '../middleware/authorization.js';
 
 export const patientRouter = Router();
-patientRouter.get('/:id', validate({ params: idParamsSchema }), asyncHandler(patientController.get));
-patientRouter.get('/:patientId/cards', validate({ params: patientParamsSchema }), asyncHandler(patientCardController.list));
-patientRouter.post('/:patientId/cards', validate({ params: patientParamsSchema, body: createPatientCardSchema }), asyncHandler(patientCardController.create));
-patientRouter.get('/:patientId/vitals', validate({ params: patientParamsSchema }), asyncHandler(vitalController.list));
-patientRouter.post('/:patientId/vitals', validate({ params: patientParamsSchema, body: createVitalSchema }), asyncHandler(vitalController.create));
+patientRouter.use(authenticate);
+patientRouter.get('/:id', validate({ params: idParamsSchema }), requirePatientRecordAccess, asyncHandler(patientController.get));
+patientRouter.get('/:patientId/cards', validate({ params: patientParamsSchema }), requirePatientOwnership('patientId'), asyncHandler(patientCardController.list));
+patientRouter.post('/:patientId/cards', requireRole('PATIENT'), validate({ params: patientParamsSchema, body: createPatientCardSchema }), requirePatientOwnership('patientId'), asyncHandler(patientCardController.create));
+patientRouter.get('/:patientId/vitals', validate({ params: patientParamsSchema }), requirePatientRecordAccess, asyncHandler(vitalController.list));
+patientRouter.post('/:patientId/vitals', requireRole('PATIENT'), validate({ params: patientParamsSchema, body: createVitalSchema.omit({ source: true, verificationStatus: true, recordedByUserId: true }) }), requirePatientOwnership('patientId'), asyncHandler(vitalController.create));
 
 export const patientCardRouter = Router();
-patientCardRouter.patch('/:id/verification', validate({ params: idParamsSchema, body: verifyPatientCardSchema }), asyncHandler(patientCardController.verify));
+patientCardRouter.patch('/:id/verification', authenticate, requireRole('ADMIN'), validate({ params: idParamsSchema, body: verifyPatientCardSchema }), asyncHandler(patientCardController.verify));

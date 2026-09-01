@@ -185,10 +185,6 @@ const PatientDashboard = () => {
       users[userIndex].hospitalPatientIds[selectedHospitalId] = patientIdInput.trim();
       localStorage.setItem('hospital_users', JSON.stringify(users));
       
-      const loggedInUser = JSON.parse(localStorage.getItem('hospital_auth_user') || '{}');
-      loggedInUser.hospitalPatientIds = users[userIndex].hospitalPatientIds;
-      localStorage.setItem('hospital_auth_user', JSON.stringify(loggedInUser));
-
       window.location.reload();
     }
   };

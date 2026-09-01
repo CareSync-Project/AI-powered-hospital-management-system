@@ -16,9 +16,9 @@ export async function validateDoctorDepartmentContext(doctorId, departmentId, ho
 }
 
 export const doctorService = {
-  listByHospital: (hospitalId) => doctorRepository.findByHospital(hospitalId),
+  listByHospital: (hospitalId) => doctorRepository.findPublicByHospital(hospitalId),
   async get(id) {
-    const doctor = await doctorRepository.findById(id);
+    const doctor = await doctorRepository.findPublicById(id);
     if (!doctor) throw new AppError('Doctor not found', 404);
     return doctor;
   },

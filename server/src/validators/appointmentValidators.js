@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { dateString, timeString, uuid } from './commonValidators.js';
 
 export const createAppointmentSchema = z.object({
-  patientId: uuid,
+  patientId: uuid.optional(),
   hospitalId: uuid,
   departmentId: uuid,
   doctorId: uuid,

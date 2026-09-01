@@ -1,131 +1,59 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import authService from '../services/authService';
+import { setAccessToken, setAuthFailureHandler } from '../services/api';
 
-const AuthContext = createContext();
-
+const AuthContext = createContext(null);
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [auth, setAuth] = useState({ user: null, profile: null, hospitalContext: [] });
+  const [isLoading, setIsLoading] = useState(true);
+
+  const clearAuth = () => {
+    setAccessToken(null);
+    setAuth({ user: null, profile: null, hospitalContext: [] });
+  };
+
+  const applyResponse = (payload) => {
+    const data = payload?.data || payload;
+    if (data.accessToken) setAccessToken(data.accessToken);
+    const profile = data.profile || null;
+    const hospitalContext = data.hospitalContext || [];
+    const displayUser = {
+      ...data.user,
+      name: profile ? [profile.firstName, profile.lastName].filter(Boolean).join(' ') : data.user.email,
+      hospitalId: hospitalContext[0]?.hospitalId || null,
+    };
+    setAuth({ user: displayUser, profile, hospitalContext });
+    return displayUser;
+  };
 
   useEffect(() => {
-    // Check local storage for an active session on load
-    const storedUser = localStorage.getItem('hospital_auth_user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-    setLoading(false);
+    setAuthFailureHandler(clearAuth);
+    authService.refreshSession().then(applyResponse).catch(clearAuth).finally(() => setIsLoading(false));
+    return () => setAuthFailureHandler(() => {});
   }, []);
 
-  const login = (email, password, role) => {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        const users = JSON.parse(localStorage.getItem('hospital_users') || '[]');
-        const foundUser = users.find(u => u.email === email && u.password === password && u.role === role);
+  const login = async (email, password) => applyResponse(await authService.login({ email, password }));
+  const register = (data) => authService.registerPatient(data);
+  const refreshAuth = async () => applyResponse(await authService.refreshSession());
+  const logout = async () => { try { await authService.logout(); } finally { clearAuth(); } };
+  const logoutAll = async () => { try { await authService.logoutAll(); } finally { clearAuth(); } };
+  const changePassword = async (data) => applyResponse(await authService.changePassword(data));
 
-        if (foundUser) {
-          const { password: _, ...sessionUser } = foundUser;
-          setUser(sessionUser);
-          localStorage.setItem('hospital_auth_user', JSON.stringify(sessionUser));
-          resolve(sessionUser);
-        } else {
-          reject(new Error('Invalid credentials or role mismatch.'));
-        }
-      }, 500);
-    });
-  };
-
-  const registerHospital = (hospitalName, adminName, adminEmail, adminPassword) => {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        const hospitals = JSON.parse(localStorage.getItem('hospital_hospitals') || '[]');
-        const users = JSON.parse(localStorage.getItem('hospital_users') || '[]');
-
-        if (hospitals.find(h => h.name.toLowerCase() === hospitalName.toLowerCase())) {
-          reject(new Error('A hospital with this name is already registered.'));
-          return;
-        }
-        if (users.find(u => u.email === adminEmail)) {
-          reject(new Error('Email already exists.'));
-          return;
-        }
-
-        const newHospital = {
-          id: 'HOSP-' + Date.now(),
-          name: hospitalName,
-          createdAt: new Date().toISOString()
-        };
-
-        const newAdminUser = {
-          id: Date.now().toString(),
-          name: adminName || `${hospitalName} Admin`,
-          email: adminEmail,
-          password: adminPassword,
-          role: 'admin',
-          hospitalId: newHospital.id,
-          createdAt: new Date().toISOString()
-        };
-
-        hospitals.push(newHospital);
-        users.push(newAdminUser);
-        
-        localStorage.setItem('hospital_hospitals', JSON.stringify(hospitals));
-        localStorage.setItem('hospital_users', JSON.stringify(users));
-
-        const { password: _, ...sessionUser } = newAdminUser;
-        setUser(sessionUser);
-        localStorage.setItem('hospital_auth_user', JSON.stringify(sessionUser));
-        resolve(sessionUser);
-      }, 500);
-    });
-  };
-
-  const register = (userData) => {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        const users = JSON.parse(localStorage.getItem('hospital_users') || '[]');
-        
-        if (users.find(u => u.email === userData.email)) {
-          reject(new Error('Email already exists.'));
-          return;
-        }
-
-        const newUser = {
-          ...userData,
-          id: Date.now().toString(),
-          createdAt: new Date().toISOString(),
-          // Independent doctor status if no hospitalId is passed initially
-          hospitalId: userData.hospitalId || null,
-        };
-
-        users.push(newUser);
-        localStorage.setItem('hospital_users', JSON.stringify(users));
-        
-        const { password: _, ...sessionUser } = newUser;
-        setUser(sessionUser);
-        localStorage.setItem('hospital_auth_user', JSON.stringify(sessionUser));
-        resolve(sessionUser);
-      }, 500);
-    });
-  };
-
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('hospital_auth_user');
-  };
-
-  const value = {
-    user,
-    loading,
+  const value = useMemo(() => ({
+    ...auth,
+    role: auth.user?.role || null,
+    isAuthenticated: Boolean(auth.user),
+    isLoading,
+    loading: isLoading,
     login,
     register,
-    registerHospital,
-    logout
-  };
+    logout,
+    logoutAll,
+    refreshAuth,
+    changePassword,
+  }), [auth, isLoading]);
 
-  return (
-    <AuthContext.Provider value={value}>
-      {!loading && children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{!isLoading && children}</AuthContext.Provider>;
 };

@@ -5,12 +5,14 @@ import departmentRouter from './departmentRoutes.js';
 import doctorRouter from './doctorRoutes.js';
 import { patientRouter, patientCardRouter } from './patientRoutes.js';
 import appointmentRouter from './appointmentRoutes.js';
-import { developmentRouteNotice } from '../middleware/developmentRouteNotice.js';
+import authRouter from './authRoutes.js';
+import adminRouter from './adminRoutes.js';
 
 const apiRouter = Router();
 
 apiRouter.use('/health', healthRouter);
-apiRouter.use(developmentRouteNotice);
+apiRouter.use('/auth', authRouter);
+apiRouter.use('/admin', adminRouter);
 apiRouter.use('/hospitals', hospitalRouter);
 apiRouter.use('/departments', departmentRouter);
 apiRouter.use('/doctors', doctorRouter);

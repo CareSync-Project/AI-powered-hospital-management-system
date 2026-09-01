@@ -7,6 +7,8 @@ const doctorInclude = {
 };
 
 export const doctorRepository = {
+  findPublicById: (id, client = prisma) => client.doctorProfile.findUnique({ where: { id, active: true }, select: { id: true, firstName: true, lastName: true, specialization: true, qualification: true, departments: { where: { active: true }, select: { primaryDepartment: true, department: { select: { id: true, name: true, code: true, hospitalId: true } } } }, schedules: { where: { active: true }, select: { id: true, hospitalId: true, departmentId: true, dayOfWeek: true, startTime: true, endTime: true } } } }),
+  findPublicByHospital: (hospitalId, client = prisma) => client.doctorProfile.findMany({ where: { active: true, hospitalAffiliations: { some: { hospitalId, active: true } } }, select: { id: true, firstName: true, lastName: true, specialization: true, qualification: true, departments: { where: { hospitalId, active: true }, select: { primaryDepartment: true, department: { select: { id: true, name: true, code: true } } } } }, orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }] }),
   findById: (id, client = prisma) => client.doctorProfile.findUnique({ where: { id }, include: doctorInclude }),
   findByHospital: (hospitalId, client = prisma) => client.doctorProfile.findMany({
     where: { hospitalAffiliations: { some: { hospitalId, active: true } } },

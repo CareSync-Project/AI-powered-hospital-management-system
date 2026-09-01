@@ -11,13 +11,13 @@ const LandingPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   
   const [formData, setFormData] = useState({
-    name: '',
+    firstName: '', lastName: '', otherNames: '', phone: '', dateOfBirth: '', gender: '',
     email: '',
     password: '',
-    specialization: '' // For doctors
+    confirmPassword: ''
   });
 
-  const { login, register, registerHospital } = useAuth();
+  const { login, register } = useAuth();
   const navigate = useNavigate();
   const [error, setError] = useState('');
 
@@ -39,20 +39,15 @@ const LandingPage = () => {
     
     try {
       if (isLogin) {
-        await login(formData.email, formData.password, role);
+        const authenticatedUser = await login(formData.email, formData.password);
+        const destinations = { PATIENT: '/patient-dashboard', DOCTOR: '/doctor-dashboard', NURSE: '/nurse-dashboard', ADMIN: '/admin-dashboard' };
+        navigate(destinations[authenticatedUser.role] || '/access-denied');
       } else {
-        if (role === 'admin') {
-          if (!formData.hospitalName) throw new Error('Hospital Name is required.');
-          if (!formData.name) throw new Error('Admin Full Name is required.');
-          await registerHospital(formData.hospitalName, formData.name, formData.email, formData.password);
-        } else {
-          await register({ ...formData, role });
-        }
+        if (role !== 'patient') throw new Error('Staff accounts are created by a hospital administrator. Please sign in with your issued account.');
+        await register({ ...formData, role: 'PATIENT' });
+        const authenticatedUser = await login(formData.email, formData.password);
+        navigate(authenticatedUser.role === 'PATIENT' ? '/patient-dashboard' : '/access-denied');
       }
-      
-      if (role === 'patient') navigate('/patient-dashboard');
-      if (role === 'doctor') navigate('/doctor-dashboard');
-      if (role === 'admin') navigate('/admin-dashboard');
       
     } catch (err) {
       setError(err.message);
@@ -280,12 +275,11 @@ const LandingPage = () => {
         {showAuthModal && (
           <motion.div 
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,68,73,0.64)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}
+            className="auth-modal-overlay"
           >
             <motion.div 
               initial={{ scale: 0.95, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0, y: 20 }}
-              className="glass-panel" 
-              style={{ width: '100%', maxWidth: '450px', padding: '3rem', backgroundColor: 'var(--color-surface)' }}
+              className="glass-panel auth-modal-panel"
             >
               <button 
                 onClick={() => setShowAuthModal(false)}
@@ -295,7 +289,7 @@ const LandingPage = () => {
               </button>
               
               <h2 style={{ marginBottom: '2rem', textAlign: 'center', fontSize: '1.75rem', color: 'var(--color-text-main)' }}>
-                {isLogin ? 'Sign in to CareSync' : role === 'admin' ? 'Register your Hospital' : 'Create an account'}
+                {isLogin ? 'Sign in to CareSync' : role === 'patient' ? 'Create a patient account' : 'Staff registration is managed by hospitals'}
               </h2>
 
               <div style={{ display: 'flex', gap: '0.25rem', marginBottom: '2rem', padding: '0.25rem', background: 'rgba(0,0,0,0.2)', borderRadius: '100vh', border: '1px solid var(--glass-border)' }}>
@@ -332,33 +326,27 @@ const LandingPage = () => {
               )}
 
               <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                {!isLogin && (
-                  <div>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>Full Name</label>
-                    <input type="text" name="name" required className="input-field" value={formData.name || ''} onChange={handleInputChange} placeholder={role === 'admin' ? "e.g. John Doe (Admin)" : ""} />
+                {!isLogin && role === 'patient' && <>
+                  <div className="auth-form-grid">
+                    <div><label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>First name</label><input type="text" name="firstName" required className="input-field" value={formData.firstName} onChange={handleInputChange} /></div>
+                    <div><label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>Last name</label><input type="text" name="lastName" required className="input-field" value={formData.lastName} onChange={handleInputChange} /></div>
                   </div>
-                )}
-                
-                {!isLogin && role === 'admin' && (
-                  <div>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>Hospital Name</label>
-                    <input type="text" name="hospitalName" required className="input-field" value={formData.hospitalName || ''} onChange={handleInputChange} placeholder="e.g. City General Hospital" />
+                  <div><label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>Other names (optional)</label><input type="text" name="otherNames" className="input-field" value={formData.otherNames} onChange={handleInputChange} /></div>
+                  <div><label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>Phone</label><input type="tel" name="phone" required className="input-field" value={formData.phone} onChange={handleInputChange} /></div>
+                  <div className="auth-form-grid">
+                    <div><label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>Date of birth</label><input type="date" name="dateOfBirth" required className="input-field" value={formData.dateOfBirth} onChange={handleInputChange} /></div>
+                    <div><label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>Gender</label><select name="gender" required className="input-field" value={formData.gender} onChange={handleInputChange}><option value="">Select</option><option value="MALE">Male</option><option value="FEMALE">Female</option><option value="OTHER">Other</option><option value="PREFER_NOT_TO_SAY">Prefer not to say</option></select></div>
                   </div>
-                )}
-                
-                {!isLogin && role === 'doctor' && (
-                  <div>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>Specialization</label>
-                    <input type="text" name="specialization" required className="input-field" value={formData.specialization || ''} onChange={handleInputChange} placeholder="e.g. Cardiology" />
-                  </div>
-                )}
+                </>}
 
                 <div>
                   <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>
-                    {role === 'admin' ? 'Username' : 'Email address'}
+                    Email address
                   </label>
-                  <input type={role === 'admin' ? "text" : "email"} name="email" required className="input-field" value={formData.email} onChange={handleInputChange} />
+                  <input type="email" name="email" required className="input-field" value={formData.email} onChange={handleInputChange} />
                 </div>
+
+                {!isLogin && role === 'patient' && <div><label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>Confirm password</label><input type={showPassword ? "text" : "password"} name="confirmPassword" required className="input-field" value={formData.confirmPassword} onChange={handleInputChange} /></div>}
 
                 <div>
                   <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>Password</label>
@@ -371,7 +359,7 @@ const LandingPage = () => {
                 </div>
 
                 <button type="submit" className="btn hover-lift" style={{ width: '100%', marginTop: '1rem', padding: '1rem', backgroundColor: 'var(--color-secondary)', color: '#fff', border: 'none', fontSize: '1rem' }}>
-                  {isLogin ? 'Sign In' : 'Continue'}
+                  {isLogin ? 'Sign In' : role === 'patient' ? 'Create patient account' : 'Staff sign-up unavailable'}
                 </button>
               </form>
 

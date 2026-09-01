@@ -29,9 +29,9 @@ Hospital Information
 
 The Patient Dashboard, Doctor Dashboard, future Nurse/Triage Dashboard, and Admin Dashboard will all communicate with the same backend. The API—not the browser—will enforce identity, role, hospital scope, record ownership, and workflow rules.
 
-## Current Phase 2 boundaries
+## Current Phase 3 boundaries
 
-The React client is preserved under `client/`, and existing feature data still uses `localStorage`; the new REST modules are not wired into those workflows yet. Express now exposes validated foundational hospital, department, doctor, schedule, patient-card, appointment, and vital routes through controllers/services/repositories. The complete Phase 2 Prisma schema and initial migration SQL exist, but no live database migration or seed result is claimed. Authentication and RBAC are deliberately deferred to Phase 3, so non-health routes are development-only.
+The React client is preserved under `client/`. Identity now comes from PostgreSQL through Express: bcrypt credentials, short-lived in-memory JWT access tokens, and hashed rotatable `AuthSession` refresh tokens in HttpOnly cookies. Protected routes load the active user and enforce role, hospital, ownership, or care relationships. Existing non-auth operational dashboard data remains in `localStorage` for phased migration; it no longer controls authenticated identity.
 
 ## Backend layers
 
@@ -47,16 +47,16 @@ Controllers should not contain business rules, and React components should not q
 
 ## Frontend organization
 
-Current pages and UI are intentionally preserved. Incremental refactoring will introduce feature-specific components/hooks and use `client/src/services/api.js` as the single REST transport. `VITE_API_URL` selects the backend origin. The service layer is present but prototype authentication continues to use its original context until the Phase 3 backend exists.
+Current pages and UI are intentionally preserved. `AuthContext` restores the secure cookie session, keeps access tokens in memory, and exposes authoritative user/profile context. The central API client includes credentials, adds bearer tokens, performs one refresh/retry on 401, and clears auth if refresh fails. Route guards use uppercase backend roles and a protected nurse placeholder is present.
 
 ## Initial data relationships
 
 Users are global identities with role-specific optional profiles. Patients have no owning hospital and join facilities through `PatientHospitalRecord`, cards, appointments, and clinical records. Doctors join hospitals through `DoctorHospital` and departments through `DoctorDepartment`. Admin and nurse profiles have one hospital in the academic prototype. Cross-table facility consistency is enforced in services where Prisma cannot express it directly.
 
-## Security architecture direction
+## Security architecture
 
-- Hash passwords with bcrypt on the server; never store or return plaintext passwords.
-- Issue and validate JWT-based sessions in Phase 3, with expiry/refresh/revocation strategy documented before use.
+- Passwords are bcrypt-hashed on the server and never returned.
+- JWT access tokens expire after 15 minutes; seven-day refresh sessions are hashed, rotated and revocable.
 - Enforce RBAC and hospital/record scope on every protected endpoint.
 - Validate all untrusted input and constrain body/upload sizes.
 - Use TLS in deployed environments, environment-managed secrets, least-privilege database credentials, audit logging, and safe error responses.

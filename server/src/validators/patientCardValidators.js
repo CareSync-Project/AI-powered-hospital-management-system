@@ -10,7 +10,7 @@ export const createPatientCardSchema = z.object({
 
 export const verifyPatientCardSchema = z.object({
   verificationStatus: z.enum(['VERIFIED', 'REJECTED']),
-  verifiedByAdminId: uuid,
+  verifiedByAdminId: uuid.optional(),
   rejectionReason: z.string().trim().min(3).max(500).optional().nullable(),
 }).superRefine((data, context) => {
   if (data.verificationStatus === 'REJECTED' && !data.rejectionReason) {

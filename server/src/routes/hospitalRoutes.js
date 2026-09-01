@@ -7,13 +7,15 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 import { createHospitalSchema, updateHospitalSchema } from '../validators/hospitalValidators.js';
 import { createDepartmentSchema } from '../validators/departmentValidators.js';
 import { hospitalParamsSchema, idParamsSchema } from '../validators/commonValidators.js';
+import { authenticate, requireRole } from '../middleware/authenticate.js';
+import { requireAdminHospitalAccess } from '../middleware/authorization.js';
 
 const router = Router();
 router.get('/', asyncHandler(hospitalController.list));
-router.post('/', validate({ body: createHospitalSchema }), asyncHandler(hospitalController.create));
+router.post('/', authenticate, requireRole('ADMIN'), validate({ body: createHospitalSchema }), asyncHandler(hospitalController.create));
 router.get('/:id', validate({ params: idParamsSchema }), asyncHandler(hospitalController.get));
-router.patch('/:id', validate({ params: idParamsSchema, body: updateHospitalSchema }), asyncHandler(hospitalController.update));
+router.patch('/:id', authenticate, requireRole('ADMIN'), validate({ params: idParamsSchema, body: updateHospitalSchema }), requireAdminHospitalAccess('id'), asyncHandler(hospitalController.update));
 router.get('/:hospitalId/departments', validate({ params: hospitalParamsSchema }), asyncHandler(departmentController.list));
-router.post('/:hospitalId/departments', validate({ params: hospitalParamsSchema, body: createDepartmentSchema }), asyncHandler(departmentController.create));
+router.post('/:hospitalId/departments', authenticate, requireRole('ADMIN'), validate({ params: hospitalParamsSchema, body: createDepartmentSchema }), requireAdminHospitalAccess('hospitalId'), asyncHandler(departmentController.create));
 router.get('/:hospitalId/doctors', validate({ params: hospitalParamsSchema }), asyncHandler(doctorController.list));
 export default router;

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { LogOut, Activity, ShieldPlus, Users, Database, LayoutDashboard, Upload, CheckCircle, Plus, FileSpreadsheet, Clock, Mail } from 'lucide-react';
-import * as XLSX from 'xlsx';
 
 const AdminDashboard = () => {
   const { user, logout } = useAuth();
@@ -67,86 +66,11 @@ const AdminDashboard = () => {
 
   const handleBulkUpload = async (e) => {
     e.preventDefault();
-    if (!file) {
-      setUploadStatus('Please select a file first.');
-      return;
-    }
-
-    try {
-      setUploadStatus('Processing file...');
-      const data = await file.arrayBuffer();
-      const workbook = XLSX.read(data);
-      const firstSheetName = workbook.SheetNames[0];
-      const worksheet = workbook.Sheets[firstSheetName];
-      const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-
-      if (json.length < 2) {
-         setUploadStatus('File appears to be empty or missing data rows.');
-         return;
-      }
-
-      const users = JSON.parse(localStorage.getItem('hospital_users') || '[]');
-      let addedCount = 0;
-
-      const rows = json.slice(1);
-
-      rows.forEach((row) => {
-        if (!row || row.length === 0 || !row[0]) return;
-        
-        const name = row[0] ? row[0].toString().trim() : '';
-        const email = row[1] ? row[1].toString().trim() : '';
-        const password = row[2] ? row[2].toString().trim() : '';
-        
-        if (name && email && password) {
-          if (!users.find(u => u.email === email)) {
-            const newUser = {
-              id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
-              name,
-              email,
-              password,
-              role: uploadType,
-              hospitalId: user.hospitalId,
-              createdAt: new Date().toISOString()
-            };
-
-            if (uploadType === 'doctor') {
-              newUser.specialization = row[3] ? row[3].toString().trim() : '';
-              newUser.jobTitle = row[4] ? row[4].toString().trim() : '';
-              newUser.ghanaCard = row[5] ? row[5].toString().trim() : '';
-            } else {
-              const existingId = row[3] ? row[3].toString().trim() : null;
-              if (existingId) {
-                newUser.id = existingId;
-              }
-              newUser.ghanaCard = row[4] ? row[4].toString().trim() : '';
-            }
-
-            users.push(newUser);
-            addedCount++;
-          }
-        }
-      });
-
-      localStorage.setItem('hospital_users', JSON.stringify(users));
-      setUploadStatus(`Successfully extracted and uploaded ${addedCount} ${uploadType}s!`);
-      setFile(null);
-      loadData(); 
-
-      setTimeout(() => setUploadStatus(''), 5000);
-    } catch (err) {
-      console.error(err);
-      setUploadStatus('Error processing file. Ensure it is a valid Excel or CSV.');
-    }
+    setUploadStatus('Legacy bulk account import is disabled because it stored plaintext passwords. Secure bulk provisioning will use the backend in a later phase.');
   };
 
   const handleAssociateDoctor = (doctorId) => {
-    const users = JSON.parse(localStorage.getItem('hospital_users') || '[]');
-    const doctorIndex = users.findIndex(u => u.id === doctorId);
-    if (doctorIndex > -1) {
-      users[doctorIndex].hospitalId = user.hospitalId;
-      localStorage.setItem('hospital_users', JSON.stringify(users));
-      loadData();
-    }
+    setUploadStatus(`Legacy doctor association for ${doctorId} is disabled. Use the authenticated staff API foundation.`);
   };
 
   const handleApproveIdRequest = (req) => {

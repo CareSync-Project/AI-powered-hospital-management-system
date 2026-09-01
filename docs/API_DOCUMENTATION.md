@@ -1,8 +1,26 @@
-# Phase 2 API Documentation
+# Phase 3 API Documentation
 
 ## Status and response convention
 
-Base URL: `http://localhost:5000/api`. Except for health, Phase 2 routes are development foundations and are **not authenticated**; responses include `X-Phase2-Authentication: not-enforced-development-foundation`. Do not expose them publicly. Phase 3 will add authentication, ownership and RBAC middleware without moving business rules into routes.
+Base URL: `http://localhost:5000/api`. Phase 3 enforces authentication and RBAC on sensitive routes. Access tokens use `Authorization: Bearer TOKEN`; refresh cookies require credentialed browser requests.
+
+## Authentication endpoints
+
+| Method and URL | Access | Purpose |
+|---|---|---|
+| `POST /auth/register` | Public | Create PATIENT user/profile only; successful registrations are not capped |
+| `POST /auth/login` | Public; failed-attempt protection | Authenticate and create session/cookie; successful logins do not consume the limit |
+| `POST /auth/refresh` | Refresh cookie, rate-limited | Rotate refresh token and issue access token |
+| `GET /auth/me` | Authenticated | Authoritative safe role/profile context |
+| `POST /auth/logout` | Authenticated | Revoke current session and clear cookie |
+| `POST /auth/logout-all` | Authenticated | Revoke all user sessions |
+| `POST /auth/change-password` | Authenticated | Verify/change password and rotate current session |
+| `POST /admin/doctors` | ADMIN, own hospital | Create doctor account/affiliation/optional assignment |
+| `POST /admin/nurses` | ADMIN, own hospital | Create nurse account |
+
+Registration accepts `email`, `password`, `confirmPassword`, `firstName`, `lastName`, optional `otherNames`, `phone`, `dateOfBirth`, and `gender`. A supplied staff role is rejected. Login role always comes from PostgreSQL.
+
+Errors consistently use `400` validation, `401` authentication/credentials, `403` authorization, `404` missing resource, `409` conflict, `429` limit, and sanitized `500`.
 
 Success:
 
@@ -29,12 +47,12 @@ Common errors are `400` invalid relationships/input, `404` missing resource, `40
 | `GET /health` | Process health; no DB query | None | `200`, required running message | `500` startup failure |
 | `GET /hospitals` | List hospitals | None | `200` array | `500` DB unavailable |
 | `GET /hospitals/:id` | Get hospital UUID | UUID path | `200` hospital | `400`, `404` |
-| `POST /hospitals` | Create hospital | Hospital body below | `201` hospital | `400`, `409` code/email |
-| `PATCH /hospitals/:id` | Update/deactivate hospital; no delete route | UUID; at least one hospital field | `200` hospital | `400`, `404`, `409` |
+| `POST /hospitals` | System provisioning only; ordinary admin request rejected | Hospital body below | Not exposed in Phase 3 | `403` |
+| `PATCH /hospitals/:id` | ADMIN updates own hospital | UUID; whitelisted fields | `200` hospital | `403`, `404`, `409` |
 | `GET /hospitals/:hospitalId/departments` | List facility departments | Hospital UUID | `200` array | `400` |
-| `POST /hospitals/:hospitalId/departments` | Create facility department | Department body below | `201` department | `400`, `404`, `409` duplicate name/code |
+| `POST /hospitals/:hospitalId/departments` | ADMIN creates in own hospital | Department body below | `201` department | `403`, `404`, `409` duplicate name/code |
 | `GET /departments/:id` | Get department | UUID path | `200` department | `400`, `404` |
-| `PATCH /departments/:id` | Update/deactivate department | UUID; at least one department field | `200` department | `400`, `404`, `409` |
+| `PATCH /departments/:id` | ADMIN updates own-hospital department | UUID; at least one department field | `200` department | `403`, `404`, `409` |
 | `GET /hospitals/:hospitalId/doctors` | List actively affiliated doctors | Hospital UUID | `200` doctors/affiliations/assignments | `400` |
 | `GET /doctors/:id` | Get doctor | UUID path | `200` doctor | `400`, `404` |
 | `POST /doctors/:id/affiliations` | Phase 2 affiliation foundation; account creation remains Phase 3 | Hospital UUID, employee number, start date | `201` affiliation | `400`, `409` |
@@ -43,15 +61,15 @@ Common errors are `400` invalid relationships/input, `404` missing resource, `40
 | `POST /departments/:departmentId/schedules` | Add department schedule foundation | Schedule body; start before end | `201` schedule | `400`, `409` duplicate |
 | `GET /doctors/:doctorId/schedules` | List doctor schedules | Doctor UUID | `200` array | `400` |
 | `POST /doctors/:doctorId/schedules` | Add doctor schedule foundation | Schedule body; affiliation/assignment and overlap checks | `201` schedule | `400`, `409` overlap/duplicate |
-| `GET /patients/:id` | Get global patient profile | Patient UUID | `200` profile; no password hash | `400`, `404`; Phase 3 ownership required |
-| `GET /patients/:patientId/cards` | List masked patient cards | Patient UUID | `200` array with only last four digits visible | `400`; Phase 3 ownership required |
-| `POST /patients/:patientId/cards` | Submit card for manual verification | Card body below | `201` masked pending card | `400`, `404`, `409`; no external NHIS call |
-| `PATCH /patient-cards/:id/verification` | Manual verification foundation, future admin-only | Status/admin UUID/reason | `200` masked card | `400`, `404`; Phase 3 admin RBAC required |
-| `GET /appointments` | Development list/filter | Optional patientId, doctorId, hospitalId, departmentId, status | `200` array | `400`; Phase 3 scope required |
-| `GET /appointments/:id` | Get appointment | UUID path | `200` appointment | `400`, `404`; Phase 3 scope required |
-| `POST /appointments` | Transactional appointment foundation | Appointment body below | `201` appointment | `400` relationship mismatch, `404`, `409` capacity/concurrency |
-| `GET /patients/:patientId/vitals` | List patient vitals | Patient UUID | `200` array | `400`; Phase 3 ownership required |
-| `POST /patients/:patientId/vitals` | Store measurements and calculate BMI | Vitals body below | `201` vital record | `400`, `404`; performs no diagnosis |
+| `GET /patients/:id` | Scoped patient profile | Authenticated ownership/care/hospital relationship | `200` safe profile | `401`, `403`, `404` |
+| `GET /patients/:patientId/cards` | Patient lists own masked cards | Authenticated PATIENT owner | `200` masked array | `401`, `403` |
+| `POST /patients/:patientId/cards` | Patient submits own card | Authenticated PATIENT owner | `201` masked pending card | `403`, `404`, `409`; no external NHIS call |
+| `PATCH /patient-cards/:id/verification` | ADMIN manually verifies own-hospital card | Status/reason; verifier derived | `200` masked card | `403`, `404` |
+| `GET /appointments` | Role-scoped appointment list | Authenticated; client identity filters overridden | `200` array | `401`, `403` |
+| `GET /appointments/:id` | Relationship-scoped appointment | Authenticated owner/assignee/hospital staff | `200` appointment | `403`, `404` |
+| `POST /appointments` | Transactional appointment foundation | PATIENT identity derived or own-hospital staff flow | `201` appointment | `403`, `409` capacity/concurrency |
+| `GET /patients/:patientId/vitals` | Relationship-scoped vitals | Authenticated | `200` array | `403`, `404` |
+| `POST /patients/:patientId/vitals` | Patient stores own unverified measurements | Authenticated PATIENT owner | `201` vital record | `403`, `404`; performs no diagnosis |
 
 ## Request bodies
 
@@ -73,7 +91,7 @@ Patient card creation:
 { "hospitalId": "uuid", "cardType": "NHIS_CARD", "cardNumber": "submitted-number", "expiresAt": "2027-12-31" }
 ```
 
-Card verification accepts `VERIFIED` or `REJECTED`, `verifiedByAdminId`, and requires `rejectionReason` when rejected. Verification is manual/prototype only.
+Card verification accepts `VERIFIED` or `REJECTED` and requires `rejectionReason` when rejected. The verifier is derived from the authenticated admin; a client-supplied verifier ID is ignored. Verification remains manual and makes no external NHIS claim.
 
 Appointment creation:
 
@@ -97,4 +115,4 @@ Appointment creation:
 
 The service validates all patient/hospital/department/doctor/assignment/card/slot relationships. Slot count increment and appointment creation share a serializable transaction.
 
-Vitals accept optional positive measurements (`temperature`, blood pressures, heart/respiratory rate, oxygen saturation, weight kg, height cm, blood glucose), plus required `hospitalId`, `source`, and `recordedByUserId`; optional `appointmentId`, `verificationStatus`, and `recordedAt`. Patient-sourced data is forced to `UNVERIFIED`. BMI is calculated only when both weight and height are present.
+Patient vitals accept optional positive measurements plus required `hospitalId` and optional `appointmentId`/`recordedAt`. The API forces `source=PATIENT`, `verificationStatus=UNVERIFIED`, and the authenticated recorder. BMI is calculated only when both weight and height are present.
