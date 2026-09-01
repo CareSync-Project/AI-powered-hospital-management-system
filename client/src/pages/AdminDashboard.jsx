@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { LogOut, Activity, ShieldPlus, Users, Database, LayoutDashboard, Upload, CheckCircle, Plus, FileSpreadsheet, Clock, Mail } from 'lucide-react';
+import Phase4Management from '../components/admin/Phase4Management';
 
 const AdminDashboard = () => {
   const { user, logout } = useAuth();
@@ -136,6 +137,9 @@ const AdminDashboard = () => {
       </div>
 
       <div className="flex-wrap" style={{ gap: '1rem', marginBottom: '2rem', borderBottom: '1px solid var(--glass-border)', paddingBottom: '1rem' }}>
+        {['hospital', 'departments', 'doctors', 'schedules'].map((tab) => (
+          <button key={tab} onClick={() => setActiveTab(tab)} className={`btn ${activeTab === tab ? 'btn-primary' : ''}`} style={{ textTransform: 'capitalize' }}>{tab}</button>
+        ))}
         <button onClick={() => setActiveTab('overview')} className={`btn ${activeTab === 'overview' ? 'btn-primary' : ''}`} style={{ background: activeTab === 'overview' ? 'var(--color-primary)' : 'transparent', color: activeTab === 'overview' ? 'white' : 'var(--color-text-muted)' }}>AI Overview</button>
         <button onClick={() => setActiveTab('staff')} className={`btn ${activeTab === 'staff' ? 'btn-primary' : ''}`} style={{ background: activeTab === 'staff' ? 'var(--color-primary)' : 'transparent', color: activeTab === 'staff' ? 'white' : 'var(--color-text-muted)' }}>Medical Staff</button>
         <button onClick={() => setActiveTab('import')} className={`btn ${activeTab === 'import' ? 'btn-primary' : ''}`} style={{ background: activeTab === 'import' ? 'var(--color-primary)' : 'transparent', color: activeTab === 'import' ? 'white' : 'var(--color-text-muted)' }}>Bulk Import</button>
@@ -148,6 +152,8 @@ const AdminDashboard = () => {
           )}
         </button>
       </div>
+
+      {['hospital', 'departments', 'doctors', 'schedules'].includes(activeTab) && <Phase4Management section={activeTab} />}
 
       {activeTab === 'overview' && (
         <>

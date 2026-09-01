@@ -8,10 +8,13 @@ import { updateDepartmentSchema } from '../validators/departmentValidators.js';
 import { departmentScheduleSchema } from '../validators/scheduleValidators.js';
 import { authenticate, requireRole } from '../middleware/authenticate.js';
 import { requireAdminDepartmentAccess } from '../middleware/authorization.js';
+import { managementScheduleController } from '../controllers/managementScheduleController.js';
+import { slotDateQuerySchema } from '../validators/scheduleValidators.js';
 
 const router = Router();
 router.get('/:id', validate({ params: idParamsSchema }), asyncHandler(departmentController.get));
 router.patch('/:id', authenticate, requireRole('ADMIN'), validate({ params: idParamsSchema, body: updateDepartmentSchema }), requireAdminDepartmentAccess, asyncHandler(departmentController.update));
 router.get('/:departmentId/schedules', validate({ params: departmentParamsSchema }), asyncHandler(scheduleController.listDepartment));
+router.get('/:departmentId/available-slots', validate({ params: departmentParamsSchema, query: slotDateQuerySchema }), asyncHandler(managementScheduleController.departmentSlots));
 router.post('/:departmentId/schedules', authenticate, requireRole('ADMIN'), validate({ params: departmentParamsSchema, body: departmentScheduleSchema.omit({ departmentId: true }) }), requireAdminDepartmentAccess, asyncHandler(scheduleController.createDepartment));
 export default router;

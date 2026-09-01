@@ -10,6 +10,7 @@ export async function assertHospitalExists(hospitalId, repositories = { hospital
 
 export const departmentService = {
   listByHospital: (hospitalId) => departmentRepository.findByHospital(hospitalId),
+  listManagement: (hospitalId) => departmentRepository.findManagementByHospital(hospitalId),
   async get(id) {
     const department = await departmentRepository.findById(id);
     if (!department) throw new AppError('Department not found', 404);

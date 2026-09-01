@@ -4,6 +4,8 @@ const doctorInclude = {
   user: { select: { id: true, email: true, active: true } },
   hospitalAffiliations: { include: { hospital: true } },
   departments: { include: { department: true, hospital: true } },
+  schedules: { include: { department: true }, orderBy: [{ dayOfWeek: 'asc' }, { startTime: 'asc' }] },
+  scheduleExceptions: { where: { date: { gte: new Date(new Date().toISOString().slice(0, 10)) } }, orderBy: { date: 'asc' } },
 };
 
 export const doctorRepository = {

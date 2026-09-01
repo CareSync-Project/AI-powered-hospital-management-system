@@ -28,7 +28,7 @@ export const staffAccountService = {
     const passwordHash = await hashPassword(data.password);
     return prisma.$transaction(async (tx) => {
       const user = await tx.user.create({ data: { email: data.email, passwordHash, role: 'DOCTOR', doctorProfile: { create: { firstName: data.firstName, lastName: data.lastName, phone: data.phone, employeeNumber: data.employeeNumber, licenseNumber: data.licenseNumber, specialization: data.specialization, qualification: data.qualification, hospitalAffiliations: { create: { hospitalId, employeeNumber: data.employeeNumber, startedAt: new Date(`${data.startedAt}T00:00:00.000Z`) } }, ...(data.departmentId ? { departments: { create: { hospitalId, departmentId: data.departmentId, primaryDepartment: data.primaryDepartment } } } : {}) } } }, include: { doctorProfile: { include: { hospitalAffiliations: true, departments: true } } } });
-      await auditService.record({ userId: auth.user.id, hospitalId, action: 'STAFF_ACCOUNT_CREATED', resourceType: 'User', resourceId: user.id, metadata: { role: 'DOCTOR' }, request }, tx);
+      await auditService.record({ userId: auth.user.id, hospitalId, action: 'DOCTOR_CREATED', resourceType: 'User', resourceId: user.id, metadata: { role: 'DOCTOR' }, request }, tx);
       return { user: serializeUser(user), profile: user.doctorProfile };
     });
   },

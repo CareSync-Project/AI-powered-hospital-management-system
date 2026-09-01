@@ -1,18 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { LogOut, Calendar, Clock, CheckCircle, Users, Activity, ShieldPlus, Play, Square, FileText } from 'lucide-react';
+import { doctorService } from '../services/doctorService';
 
 const DoctorDashboard = () => {
-  const { user, logout } = useAuth();
+  const { user, profile, hospitalContext, logout } = useAuth();
   const [appointments, setAppointments] = useState([]);
   const [queueLength, setQueueLength] = useState(0);
 
   const [activeConsultation, setActiveConsultation] = useState(null);
   const [consultationStartTime, setConsultationStartTime] = useState(null);
+  const [scheduleData, setScheduleData] = useState({ schedules: [], exceptions: [] });
+  const [scheduleError, setScheduleError] = useState('');
 
   // Load existing data
   useEffect(() => {
     loadAppointments();
+    doctorService.mySchedule().then((response) => setScheduleData(response.data)).catch((error) => setScheduleError(error.message));
   }, [user.id]);
 
   const loadAppointments = () => {
@@ -180,6 +184,19 @@ const DoctorDashboard = () => {
             )}
           </div>
         </div>
+      </div>
+
+      <div className="glass-panel" style={{ padding: '2rem', marginTop: '2rem' }}>
+        <h3 style={{ marginBottom: '1rem' }}>My Schedule</h3>
+        <p style={{ color: 'var(--color-text-muted)' }}>{profile?.specialization} · {hospitalContext?.length || 0} active hospital context(s)</p>
+        {scheduleError && <p style={{ color: 'var(--color-error)' }}>{scheduleError}</p>}
+        {scheduleData.schedules.length === 0 ? <p>No work schedule configured.</p> : scheduleData.schedules.map((item) => (
+          <div key={item.id} style={{ padding: '0.75rem 0', borderBottom: '1px solid var(--glass-border)' }}>
+            <strong>{item.dayOfWeek}</strong> · {new Date(item.startTime).toISOString().slice(11,16)}–{new Date(item.endTime).toISOString().slice(11,16)} · {item.department.name} · maximum {item.maximumPatients} patients
+          </div>
+        ))}
+        <h4 style={{ marginTop: '1.5rem' }}>Upcoming leave and exceptions</h4>
+        {scheduleData.exceptions.length === 0 ? <p>No upcoming exceptions.</p> : scheduleData.exceptions.map((item) => <div key={item.id}>{new Date(item.date).toISOString().slice(0,10)} · {item.exceptionType} {item.reason ? `· ${item.reason}` : ''}</div>)}
       </div>
     </div>
   );

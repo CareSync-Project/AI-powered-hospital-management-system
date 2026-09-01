@@ -18,6 +18,30 @@ Base URL: `http://localhost:5000/api`. Phase 3 enforces authentication and RBAC 
 | `POST /admin/doctors` | ADMIN, own hospital | Create doctor account/affiliation/optional assignment |
 | `POST /admin/nurses` | ADMIN, own hospital | Create nurse account |
 
+## Phase 4 management and discovery
+
+| Method and URL | Access | Purpose |
+|---|---|---|
+| `GET /admin/hospital` | ADMIN | Own hospital settings |
+| `PATCH /admin/hospital` | ADMIN | Update own hospital |
+| `GET /admin/departments` | ADMIN | Own departments, schedules and doctor counts |
+| `POST /admin/departments` | ADMIN | Create own-hospital department |
+| `POST /admin/departments/:id/schedules` | ADMIN | Create non-overlapping clinic session |
+| `PATCH /department-schedules/:id` | ADMIN | Update/deactivate own-hospital session |
+| `GET /admin/doctors` | ADMIN | Own-hospital doctor management records |
+| `PATCH /admin/doctors/:id` | ADMIN | Whitelisted doctor profile/active update |
+| `POST /admin/doctors/:id/departments` | ADMIN | Add/restore department assignment |
+| `DELETE /admin/doctors/:id/departments/:departmentId` | ADMIN | Soft-deactivate assignment |
+| `POST /admin/doctors/:id/schedules` | ADMIN | Create validated doctor schedule |
+| `PATCH /doctor-schedules/:id` | ADMIN | Update/deactivate doctor schedule |
+| `GET /admin/doctors/:id/exceptions` | ADMIN | Own-hospital doctor exceptions |
+| `POST /admin/doctors/:id/exceptions` | ADMIN | Create leave/unavailable/custom-hours/holiday |
+| `PATCH /schedule-exceptions/:id` | ADMIN | Update own-hospital exception |
+| `POST /admin/doctors/:id/generate-slots` | ADMIN | Safely generate/regenerate date slots |
+| `GET /doctors/me/schedule` | DOCTOR | Own private schedule and upcoming exceptions |
+| `GET /doctors/:id/available-slots?date=YYYY-MM-DD` | Public | Safe available doctor slots |
+| `GET /departments/:id/available-slots?date=YYYY-MM-DD` | Public | Safe available department slots |
+
 Registration accepts `email`, `password`, `confirmPassword`, `firstName`, `lastName`, optional `otherNames`, `phone`, `dateOfBirth`, and `gender`. A supplied staff role is rejected. Login role always comes from PostgreSQL.
 
 Errors consistently use `400` validation, `401` authentication/credentials, `403` authorization, `404` missing resource, `409` conflict, `429` limit, and sanitized `500`.

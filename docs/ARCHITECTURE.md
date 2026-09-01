@@ -53,6 +53,10 @@ Current pages and UI are intentionally preserved. `AuthContext` restores the sec
 
 Users are global identities with role-specific optional profiles. Patients have no owning hospital and join facilities through `PatientHospitalRecord`, cards, appointments, and clinical records. Doctors join hospitals through `DoctorHospital` and departments through `DoctorDepartment`. Admin and nurse profiles have one hospital in the academic prototype. Cross-table facility consistency is enforced in services where Prisma cannot express it directly.
 
+## Phase 4 scheduling flow
+
+Hospital configuration flows through `Department`, `DepartmentSchedule`, `DoctorDepartment`, `DoctorSchedule`, `ScheduleException`, and generated `AppointmentSlot` records. Admin management services derive hospital scope from authentication. Public discovery uses reduced DTOs; doctor private schedule context requires the authenticated doctor. React management components call central service modules rather than Prisma or repeated direct fetch calls.
+
 ## Security architecture
 
 - Passwords are bcrypt-hashed on the server and never returned.

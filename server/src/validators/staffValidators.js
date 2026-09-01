@@ -22,3 +22,5 @@ export const createDoctorAccountSchema = z.object({
 }).strict();
 
 export const createNurseAccountSchema = z.object(common).strict();
+
+export const updateDoctorProfileSchema = z.object({ firstName: z.string().trim().min(2).max(80).optional(), lastName: z.string().trim().min(2).max(80).optional(), phone: z.string().trim().min(7).max(30).optional(), specialization: z.string().trim().min(2).max(120).optional(), qualification: z.string().trim().min(2).max(160).optional(), active: z.boolean().optional() }).strict().refine((data) => Object.keys(data).length > 0, 'At least one field is required');

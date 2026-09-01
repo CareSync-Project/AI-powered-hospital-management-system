@@ -176,6 +176,8 @@ a:hover {
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 1rem;
 }
+.management-form-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:1rem; margin-top:1.25rem; }
+.management-form-grid label { color:var(--color-text-muted); text-transform:capitalize; }
 
 @media (max-width: 560px) {
   .auth-modal-overlay {

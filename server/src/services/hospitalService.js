@@ -8,6 +8,11 @@ export const hospitalService = {
     if (!hospital) throw new AppError('Hospital not found', 404);
     return hospital;
   },
+  async getManagement(id) {
+    const hospital = await hospitalRepository.findById(id);
+    if (!hospital) throw new AppError('Hospital not found', 404);
+    return hospital;
+  },
   async get(id) {
     const hospital = await hospitalRepository.findById(id);
     if (!hospital) throw new AppError('Hospital not found', 404);
