@@ -20,4 +20,7 @@ export const appointmentRepository = {
       ...(slot.bookedCount + 1 >= slot.capacity ? { status: 'FULL' } : {}),
     },
   }),
+  releaseSlot: (id, client = prisma) => client.appointmentSlot.updateMany({ where: { id, bookedCount: { gt: 0 } }, data: { bookedCount: { decrement: 1 }, status: 'AVAILABLE' } }),
+  update: (id, data, client = prisma) => client.appointment.update({ where: { id }, data, include: appointmentInclude }),
+  findPatientConflict: (patientId, date, startTime, endTime, excludeId, client = prisma) => client.appointment.findFirst({ where: { patientId, appointmentDate: date, status: { notIn: ['CANCELLED', 'MISSED'] }, ...(excludeId ? { id: { not: excludeId } } : {}), startTime: { lt: endTime }, endTime: { gt: startTime } } }),
 };

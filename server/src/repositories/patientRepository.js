@@ -7,4 +7,5 @@ const patientInclude = {
 
 export const patientRepository = {
   findById: (id, client = prisma) => client.patientProfile.findUnique({ where: { id }, include: patientInclude }),
+  update: (id, data, client = prisma) => client.patientProfile.update({ where: { id }, data, include: patientInclude }),
 };

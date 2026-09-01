@@ -7,4 +7,5 @@ export const patientService = {
     if (!patient) throw new AppError('Patient not found', 404);
     return patient;
   },
+  update: (id, data) => patientRepository.update(id, data),
 };

@@ -8,6 +8,7 @@ import appointmentRouter from './appointmentRoutes.js';
 import authRouter from './authRoutes.js';
 import adminRouter from './adminRoutes.js';
 import { departmentScheduleRouter, doctorScheduleRouter, scheduleExceptionRouter } from './schedulingManagementRoutes.js';
+import patientSelfServiceRouter from './patientSelfServiceRoutes.js';
 
 const apiRouter = Router();
 
@@ -17,6 +18,7 @@ apiRouter.use('/admin', adminRouter);
 apiRouter.use('/department-schedules', departmentScheduleRouter);
 apiRouter.use('/doctor-schedules', doctorScheduleRouter);
 apiRouter.use('/schedule-exceptions', scheduleExceptionRouter);
+apiRouter.use('/patient', patientSelfServiceRouter);
 apiRouter.use('/hospitals', hospitalRouter);
 apiRouter.use('/departments', departmentRouter);
 apiRouter.use('/doctors', doctorRouter);

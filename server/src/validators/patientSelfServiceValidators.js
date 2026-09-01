@@ -1,0 +1,9 @@
+import { z } from 'zod';
+import { dateString, uuid } from './commonValidators.js';
+
+export const patientBookingSchema = z.object({ slotId: uuid, patientCardId: uuid, reasonForVisit: z.string().trim().min(3).max(1000), symptomsSummary: z.string().trim().max(2000).optional().nullable() }).strict();
+export const cancellationSchema = z.object({ cancellationReason: z.string().trim().min(3).max(500).optional().nullable() }).strict();
+export const rescheduleSchema = z.object({ newSlotId: uuid }).strict();
+export const availabilitySchema = z.object({ date: dateString }).strict();
+export const recommendationSchema = z.object({ hospitalId: uuid, departmentId: uuid, date: dateString }).strict();
+export const patientProfileUpdateSchema = z.object({ phone: z.string().trim().min(7).max(30).optional(), address: z.string().trim().min(3).max(240).optional(), city: z.string().trim().min(2).max(100).optional(), region: z.string().trim().min(2).max(100).optional(), emergencyContactName: z.string().trim().min(2).max(160).optional().nullable(), emergencyContactPhone: z.string().trim().min(7).max(30).optional().nullable() }).strict().refine((data) => Object.keys(data).length > 0, 'At least one field is required');

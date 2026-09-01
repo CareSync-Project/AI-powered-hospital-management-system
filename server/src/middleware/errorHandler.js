@@ -11,12 +11,14 @@ const PRISMA_ERROR_STATUS = {
   P2002: 409,
   P2003: 409,
   P2025: 404,
+  P2034: 409,
 };
 
 const PRISMA_ERROR_MESSAGE = {
   P2002: 'A record with these unique values already exists',
   P2003: 'The operation conflicts with a related record',
   P2025: 'The requested record was not found',
+  P2034: 'The operation conflicted with another request. Please try again.',
 };
 
 export function notFoundHandler(request, _response, next) {
