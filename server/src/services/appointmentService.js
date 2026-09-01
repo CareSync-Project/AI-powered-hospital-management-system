@@ -12,6 +12,13 @@ import { timeToDate, validateTimeRange } from '../utils/time.js';
 import { notificationService } from './notificationService.js';
 import { auditService } from './auditService.js';
 
+async function serializableWithRetry(callback, attempts = 3) {
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try { return await prisma.$transaction(callback, { isolationLevel: 'Serializable', maxWait: 5000, timeout: 10000 }); }
+    catch (error) { if (error.code !== 'P2034' || attempt === attempts) throw error; }
+  }
+}
+
 export function createAppointmentNumber(now = new Date(), idFactory = randomUUID) {
   return `APT-${now.getUTCFullYear()}-${idFactory().replaceAll('-', '').slice(0, 8).toUpperCase()}`;
 }
@@ -132,7 +139,7 @@ export const appointmentService = {
     }, { isolationLevel: 'Serializable' });
   },
   async reschedulePatientAppointment(id, patientId, userId, newSlotId, request) {
-    return prisma.$transaction(async (tx) => {
+    return serializableWithRetry(async (tx) => {
       const [appointment, newSlot] = await Promise.all([appointmentRepository.findById(id, tx), appointmentRepository.findSlot(newSlotId, tx)]);
       if (!appointment) throw new AppError('Appointment not found', 404);
       if (appointment.patientId !== patientId) throw new AppError('Not authorized', 403);
@@ -152,6 +159,6 @@ export const appointmentService = {
       await notificationService.create({ userId, hospitalId: newSlot.hospitalId, title: 'Appointment rescheduled', message: `Appointment ${appointment.appointmentNumber} was rescheduled.`, type: 'APPOINTMENT' }, tx);
       await auditService.record({ userId, hospitalId: newSlot.hospitalId, action: 'APPOINTMENT_RESCHEDULED', resourceType: 'Appointment', resourceId: id, request }, tx);
       return updated;
-    }, { isolationLevel: 'Serializable', maxWait: 5000, timeout: 10000 });
+    });
   },
 };

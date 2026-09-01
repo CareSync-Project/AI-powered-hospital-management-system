@@ -1,5 +1,20 @@
 # Role-Based and Scoped Authorization
 
+## Phase 6 clinical permissions
+
+| Capability | Patient | Nurse | Doctor | Admin |
+|---|---:|---:|---:|---:|
+| View vitals | Own | Hospital workflow | Assigned care | No general clinical access |
+| Submit preliminary vitals | Own/unverified | — | — | No |
+| Record verified vitals | No | Own hospital | Assigned patient | No |
+| Check in | No | Own hospital | No | Own hospital operationally |
+| Create triage | No | Own hospital | No | No |
+| Start/complete consultation | No | No | Assigned appointment | No |
+| Write diagnosis/treatment | No | No | Assigned doctor only | No |
+| View finalized summary | Own | Workflow context | Assigned care | No general access |
+
+Frontend controls are UX only; backend profile and relationship lookups enforce every permission.
+
 Frontend guards improve navigation only. Express middleware, authenticated profile lookups, and PostgreSQL relationships make every authorization decision. Request bodies cannot select a role, admin hospital, nurse hospital, or patient identity.
 
 | Capability | PATIENT | DOCTOR | NURSE | ADMIN |

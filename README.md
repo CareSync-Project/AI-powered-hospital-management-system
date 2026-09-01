@@ -1,6 +1,6 @@
 # AI-Powered Hospital Management System
 
-> Current status: Phases 1–5 foundations are implemented. Phase 5 adds the PostgreSQL-backed patient booking, card, notification portal, and installable CareSync PWA. Triage, consultation, and AI symptom assessment remain future phases.
+> Current status: Phases 1–6 are implemented. Phase 6 adds PostgreSQL-backed check-in, vitals, nurse triage, deterministic queues, doctor consultation, follow-up, and patient clinical summaries. AI symptom assessment remains Phase 7 work.
 
 ## Project overview
 

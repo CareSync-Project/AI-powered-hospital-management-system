@@ -1,5 +1,24 @@
 # API Documentation
 
+## Phase 6 clinical endpoints
+
+| Method/path | Role | Purpose |
+|---|---|---|
+| `GET /clinical/nurse/appointments/today` | Nurse | Hospital-scoped worklist |
+| `PATCH /clinical/appointments/:id/check-in` | Nurse/Admin | Controlled check-in |
+| `GET/POST /clinical/appointments/:id/vitals` | Nurse/Doctor | Scoped clinical vitals |
+| `PATCH /clinical/vitals/:id/verify` | Nurse | Verify patient entry |
+| `POST /clinical/appointments/:id/triage` | Nurse | Save triage |
+| `PATCH /clinical/appointments/:id/waiting` | Nurse | Enter queue |
+| `GET /clinical/doctors/me/queue` | Doctor | Assigned queue |
+| `GET /clinical/doctors/me/appointments/:id/clinical` | Doctor | Clinical context |
+| `PATCH .../:id/start` | Doctor | Start consultation |
+| `PATCH .../:id/consultation` | Doctor | Save draft |
+| `PATCH .../:id/complete` | Doctor | Complete consultation |
+| `GET/POST /patient/vitals` | Patient | Own records/preliminary entry |
+| `GET /patient/appointments/:id/progress` | Patient | Own progress |
+| `GET /patient/consultations/:id` | Patient | Own finalized summary |
+
 ## Phase 5 patient self-service (`/api/patient`)
 
 All endpoints require an authenticated PATIENT; identity comes from the session.

@@ -1,5 +1,9 @@
 # Project Architecture
 
+## Phase 6 clinical layer
+
+Appointment workflow, vital assessment, triage, queue, and consultation services sit between role-protected Express controllers and Prisma. PostgreSQL is authoritative. Conditional updates and serializable transactions protect transitions. Nurse access is hospital-scoped, doctor access follows assignment, patient access follows ownership, and the PWA caches no clinical API response.
+
 ## Phase 5 patient self-service
 
 The React patient portal uses modular patient, appointment, card, and notification services through the central in-memory-token API client. Express derives `PatientProfile` from the JWT-backed session. Services enforce ownership and hospital/card/slot relationships; Prisma serializable transactions coordinate appointment, capacity, notification, hospital relationship, and audit changes. PostgreSQL is authoritative. The service worker caches static shell resources only and treats `/api/` as network-only.
