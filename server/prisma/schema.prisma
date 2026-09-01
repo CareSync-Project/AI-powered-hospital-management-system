@@ -14,34 +14,625 @@ enum UserRole {
   ADMIN
 }
 
-model User {
-  id           String    @id @default(uuid()) @db.Uuid
-  email        String    @unique
-  passwordHash String
-  role         UserRole
-  active       Boolean   @default(true)
-  hospitalId   String?   @db.Uuid
-  hospital     Hospital? @relation(fields: [hospitalId], references: [id], onDelete: SetNull)
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+  PREFER_NOT_TO_SAY
+}
 
-  @@index([hospitalId])
+enum PatientHospitalStatus {
+  PENDING
+  ACTIVE
+  INACTIVE
+}
+
+enum CardType {
+  HOSPITAL_CARD
+  NHIS_CARD
+}
+
+enum VerificationStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum DayOfWeek {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}
+
+enum ScheduleExceptionType {
+  UNAVAILABLE
+  LEAVE
+  CUSTOM_HOURS
+  HOLIDAY
+}
+
+enum AppointmentSlotStatus {
+  AVAILABLE
+  FULL
+  BLOCKED
+  CLOSED
+}
+
+enum AppointmentUrgency {
+  ROUTINE
+  LOW
+  MODERATE
+  HIGH
+  EMERGENCY
+}
+
+enum BookingMethod {
+  PATIENT_PWA
+  STAFF
+  WALK_IN
+  AI_RECOMMENDATION
+}
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  CHECKED_IN
+  TRIAGED
+  WAITING
+  IN_CONSULTATION
+  COMPLETED
+  CANCELLED
+  MISSED
+}
+
+enum VitalSource {
+  PATIENT
+  NURSE
+  DOCTOR
+  CONNECTED_DEVICE
+}
+
+enum VitalVerificationStatus {
+  UNVERIFIED
+  VERIFIED
+}
+
+enum NotificationType {
+  APPOINTMENT
+  CARD_VERIFICATION
+  SCHEDULE
+  SYSTEM
+  CONSULTATION
+  REMINDER
+}
+
+model User {
+  id             String          @id @default(uuid()) @db.Uuid
+  email          String          @unique
+  passwordHash   String
+  role           UserRole
+  active         Boolean         @default(true)
+  emailVerified  Boolean         @default(false)
+  lastLoginAt    DateTime?
+  adminProfile   AdminProfile?
+  patientProfile PatientProfile?
+  doctorProfile  DoctorProfile?
+  nurseProfile   NurseProfile?
+  notifications  Notification[]
+  auditLogs      AuditLog[]
+  recordedVitals VitalRecord[]   @relation("VitalRecordedBy")
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
   @@index([role, active])
 }
 
 model Hospital {
-  id           String   @id @default(uuid()) @db.Uuid
-  name         String
-  hospitalCode String   @unique
-  address      String
-  region       String
-  phone        String
-  email        String   @unique
-  active       Boolean  @default(true)
-  users        User[]
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id                  String                  @id @default(uuid()) @db.Uuid
+  name                String
+  hospitalCode        String                  @unique
+  address             String
+  city                String
+  region              String
+  country             String
+  phone               String
+  email               String                  @unique
+  active              Boolean                 @default(true)
+  adminProfiles       AdminProfile[]
+  patientRecords      PatientHospitalRecord[]
+  patientCards        PatientCard[]
+  departments         Department[]
+  departmentSchedules DepartmentSchedule[]
+  doctorAffiliations  DoctorHospital[]
+  doctorDepartments   DoctorDepartment[]
+  nurseProfiles       NurseProfile[]
+  doctorSchedules     DoctorSchedule[]
+  scheduleExceptions  ScheduleException[]
+  appointmentSlots    AppointmentSlot[]
+  appointments        Appointment[]
+  vitalRecords        VitalRecord[]
+  triageRecords       TriageRecord[]
+  symptomAssessments  SymptomAssessment[]
+  consultations       Consultation[]
+  notifications       Notification[]
+  auditLogs           AuditLog[]
+  createdAt           DateTime                @default(now())
+  updatedAt           DateTime                @updatedAt
 
   @@index([name])
   @@index([region, active])
+}
+
+model AdminProfile {
+  id                   String        @id @default(uuid()) @db.Uuid
+  userId               String        @unique @db.Uuid
+  hospitalId           String        @db.Uuid
+  employeeNumber       String
+  firstName            String
+  lastName             String
+  phone                String
+  active               Boolean       @default(true)
+  user                 User          @relation(fields: [userId], references: [id], onDelete: Restrict)
+  hospital             Hospital      @relation(fields: [hospitalId], references: [id], onDelete: Restrict)
+  verifiedPatientCards PatientCard[] @relation("CardVerifiedByAdmin")
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+
+  @@unique([hospitalId, employeeNumber])
+  @@index([hospitalId, active])
+}
+
+model PatientProfile {
+  id                    String                  @id @default(uuid()) @db.Uuid
+  userId                String                  @unique @db.Uuid
+  firstName             String
+  lastName              String
+  otherNames            String?
+  dateOfBirth           DateTime                @db.Date
+  gender                Gender
+  phone                 String
+  address               String
+  city                  String
+  region                String
+  emergencyContactName  String?
+  emergencyContactPhone String?
+  active                Boolean                 @default(true)
+  user                  User                    @relation(fields: [userId], references: [id], onDelete: Restrict)
+  hospitalRecords       PatientHospitalRecord[]
+  cards                 PatientCard[]
+  appointments          Appointment[]
+  vitalRecords          VitalRecord[]
+  triageRecords         TriageRecord[]
+  symptomAssessments    SymptomAssessment[]
+  consultations         Consultation[]
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime                @updatedAt
+
+  @@index([lastName, firstName])
+  @@index([active])
+}
+
+model PatientHospitalRecord {
+  id                    String                @id @default(uuid()) @db.Uuid
+  patientId             String                @db.Uuid
+  hospitalId            String                @db.Uuid
+  hospitalPatientNumber String
+  status                PatientHospitalStatus @default(ACTIVE)
+  firstVisitAt          DateTime?
+  lastVisitAt           DateTime?
+  patient               PatientProfile        @relation(fields: [patientId], references: [id], onDelete: Restrict)
+  hospital              Hospital              @relation(fields: [hospitalId], references: [id], onDelete: Restrict)
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime              @updatedAt
+
+  @@unique([hospitalId, hospitalPatientNumber])
+  @@unique([patientId, hospitalId])
+  @@index([hospitalId, status])
+}
+
+model PatientCard {
+  id                 String             @id @default(uuid()) @db.Uuid
+  patientId          String             @db.Uuid
+  hospitalId         String             @db.Uuid
+  cardType           CardType
+  cardNumber         String
+  verificationStatus VerificationStatus @default(PENDING)
+  verifiedByAdminId  String?            @db.Uuid
+  verifiedAt         DateTime?
+  rejectionReason    String?
+  expiresAt          DateTime?          @db.Date
+  active             Boolean            @default(true)
+  patient            PatientProfile     @relation(fields: [patientId], references: [id], onDelete: Restrict)
+  hospital           Hospital           @relation(fields: [hospitalId], references: [id], onDelete: Restrict)
+  verifiedByAdmin    AdminProfile?      @relation("CardVerifiedByAdmin", fields: [verifiedByAdminId], references: [id], onDelete: SetNull)
+  appointments       Appointment[]
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  @@unique([hospitalId, cardType, cardNumber])
+  @@index([patientId, active])
+  @@index([hospitalId, verificationStatus])
+}
+
+model Department {
+  id                  String               @id @default(uuid()) @db.Uuid
+  hospitalId          String               @db.Uuid
+  name                String
+  code                String
+  description         String?
+  active              Boolean              @default(true)
+  requiresAppointment Boolean              @default(true)
+  hospital            Hospital             @relation(fields: [hospitalId], references: [id], onDelete: Restrict)
+  schedules           DepartmentSchedule[]
+  doctorDepartments   DoctorDepartment[]
+  doctorSchedules     DoctorSchedule[]
+  appointmentSlots    AppointmentSlot[]
+  appointments        Appointment[]
+  symptomAssessments  SymptomAssessment[]  @relation("RecommendedDepartment")
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+
+  @@unique([hospitalId, name])
+  @@unique([hospitalId, code])
+  @@index([hospitalId, active])
+}
+
+model DepartmentSchedule {
+  id            String     @id @default(uuid()) @db.Uuid
+  hospitalId    String     @db.Uuid
+  departmentId  String     @db.Uuid
+  dayOfWeek     DayOfWeek
+  startTime     DateTime   @db.Time(0)
+  endTime       DateTime   @db.Time(0)
+  dailyCapacity Int
+  active        Boolean    @default(true)
+  hospital      Hospital   @relation(fields: [hospitalId], references: [id], onDelete: Restrict)
+  department    Department @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  @@unique([departmentId, dayOfWeek, startTime, endTime])
+  @@index([hospitalId, dayOfWeek])
+  @@index([departmentId, active])
+}
+
+model DoctorProfile {
+  id                   String              @id @default(uuid()) @db.Uuid
+  userId               String              @unique @db.Uuid
+  firstName            String
+  lastName             String
+  phone                String
+  employeeNumber       String?
+  licenseNumber        String              @unique
+  specialization       String
+  qualification        String
+  active               Boolean             @default(true)
+  user                 User                @relation(fields: [userId], references: [id], onDelete: Restrict)
+  hospitalAffiliations DoctorHospital[]
+  departments          DoctorDepartment[]
+  schedules            DoctorSchedule[]
+  scheduleExceptions   ScheduleException[]
+  appointmentSlots     AppointmentSlot[]
+  appointments         Appointment[]
+  consultations        Consultation[]
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+
+  @@index([lastName, firstName])
+  @@index([specialization, active])
+}
+
+model DoctorHospital {
+  id             String        @id @default(uuid()) @db.Uuid
+  doctorId       String        @db.Uuid
+  hospitalId     String        @db.Uuid
+  employeeNumber String
+  active         Boolean       @default(true)
+  startedAt      DateTime      @db.Date
+  endedAt        DateTime?     @db.Date
+  doctor         DoctorProfile @relation(fields: [doctorId], references: [id], onDelete: Restrict)
+  hospital       Hospital      @relation(fields: [hospitalId], references: [id], onDelete: Restrict)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@unique([doctorId, hospitalId])
+  @@unique([hospitalId, employeeNumber])
+  @@index([doctorId, active])
+  @@index([hospitalId, active])
+}
+
+model DoctorDepartment {
+  id                String        @id @default(uuid()) @db.Uuid
+  doctorId          String        @db.Uuid
+  departmentId      String        @db.Uuid
+  hospitalId        String        @db.Uuid
+  primaryDepartment Boolean       @default(false)
+  active            Boolean       @default(true)
+  doctor            DoctorProfile @relation(fields: [doctorId], references: [id], onDelete: Restrict)
+  department        Department    @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+  hospital          Hospital      @relation(fields: [hospitalId], references: [id], onDelete: Restrict)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  @@unique([doctorId, departmentId, hospitalId])
+  @@index([doctorId, active])
+  @@index([departmentId, active])
+  @@index([hospitalId, active])
+}
+
+model NurseProfile {
+  id             String         @id @default(uuid()) @db.Uuid
+  userId         String         @unique @db.Uuid
+  hospitalId     String         @db.Uuid
+  employeeNumber String
+  firstName      String
+  lastName       String
+  phone          String
+  licenseNumber  String         @unique
+  active         Boolean        @default(true)
+  user           User           @relation(fields: [userId], references: [id], onDelete: Restrict)
+  hospital       Hospital       @relation(fields: [hospitalId], references: [id], onDelete: Restrict)
+  triageRecords  TriageRecord[]
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@unique([hospitalId, employeeNumber])
+  @@index([hospitalId, active])
+}
+
+model DoctorSchedule {
+  id                          String        @id @default(uuid()) @db.Uuid
+  doctorId                    String        @db.Uuid
+  departmentId                String        @db.Uuid
+  hospitalId                  String        @db.Uuid
+  dayOfWeek                   DayOfWeek
+  startTime                   DateTime      @db.Time(0)
+  endTime                     DateTime      @db.Time(0)
+  consultationDurationMinutes Int
+  maximumPatients             Int
+  active                      Boolean       @default(true)
+  doctor                      DoctorProfile @relation(fields: [doctorId], references: [id], onDelete: Restrict)
+  department                  Department    @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+  hospital                    Hospital      @relation(fields: [hospitalId], references: [id], onDelete: Restrict)
+  createdAt                   DateTime      @default(now())
+  updatedAt                   DateTime      @updatedAt
+
+  @@unique([doctorId, departmentId, dayOfWeek, startTime, endTime])
+  @@index([doctorId, dayOfWeek, active])
+  @@index([departmentId, dayOfWeek])
+  @@index([hospitalId, dayOfWeek])
+}
+
+model ScheduleException {
+  id            String                @id @default(uuid()) @db.Uuid
+  doctorId      String                @db.Uuid
+  hospitalId    String                @db.Uuid
+  date          DateTime              @db.Date
+  exceptionType ScheduleExceptionType
+  reason        String?
+  startTime     DateTime?             @db.Time(0)
+  endTime       DateTime?             @db.Time(0)
+  doctor        DoctorProfile         @relation(fields: [doctorId], references: [id], onDelete: Restrict)
+  hospital      Hospital              @relation(fields: [hospitalId], references: [id], onDelete: Restrict)
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
+
+  @@unique([doctorId, hospitalId, date, exceptionType, startTime, endTime])
+  @@index([doctorId, date])
+  @@index([hospitalId, date])
+}
+
+model AppointmentSlot {
+  id           String                @id @default(uuid()) @db.Uuid
+  hospitalId   String                @db.Uuid
+  departmentId String                @db.Uuid
+  doctorId     String                @db.Uuid
+  date         DateTime              @db.Date
+  startTime    DateTime              @db.Time(0)
+  endTime      DateTime              @db.Time(0)
+  capacity     Int
+  bookedCount  Int                   @default(0)
+  status       AppointmentSlotStatus @default(AVAILABLE)
+  hospital     Hospital              @relation(fields: [hospitalId], references: [id], onDelete: Restrict)
+  department   Department            @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+  doctor       DoctorProfile         @relation(fields: [doctorId], references: [id], onDelete: Restrict)
+  appointments Appointment[]
+  createdAt    DateTime              @default(now())
+  updatedAt    DateTime              @updatedAt
+
+  @@unique([doctorId, date, startTime, endTime])
+  @@index([doctorId, date, status])
+  @@index([departmentId, date])
+  @@index([hospitalId, date])
+}
+
+model Appointment {
+  id                    String              @id @default(uuid()) @db.Uuid
+  appointmentNumber     String              @unique
+  patientId             String              @db.Uuid
+  hospitalId            String              @db.Uuid
+  departmentId          String              @db.Uuid
+  doctorId              String              @db.Uuid
+  patientCardId         String?             @db.Uuid
+  appointmentSlotId     String?             @db.Uuid
+  appointmentDate       DateTime            @db.Date
+  startTime             DateTime            @db.Time(0)
+  endTime               DateTime            @db.Time(0)
+  reasonForVisit        String
+  symptomsSummary       String?
+  urgency               AppointmentUrgency  @default(ROUTINE)
+  bookingMethod         BookingMethod
+  status                AppointmentStatus   @default(PENDING)
+  checkedInAt           DateTime?
+  triagedAt             DateTime?
+  consultationStartedAt DateTime?
+  completedAt           DateTime?
+  cancelledAt           DateTime?
+  cancellationReason    String?
+  patient               PatientProfile      @relation(fields: [patientId], references: [id], onDelete: Restrict)
+  hospital              Hospital            @relation(fields: [hospitalId], references: [id], onDelete: Restrict)
+  department            Department          @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+  doctor                DoctorProfile       @relation(fields: [doctorId], references: [id], onDelete: Restrict)
+  patientCard           PatientCard?        @relation(fields: [patientCardId], references: [id], onDelete: SetNull)
+  appointmentSlot       AppointmentSlot?    @relation(fields: [appointmentSlotId], references: [id], onDelete: SetNull)
+  vitalRecords          VitalRecord[]
+  triageRecords         TriageRecord[]
+  symptomAssessments    SymptomAssessment[]
+  consultation          Consultation?
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  @@index([patientId, appointmentDate])
+  @@index([doctorId, appointmentDate, status])
+  @@index([hospitalId, appointmentDate, status])
+  @@index([departmentId, appointmentDate])
+  @@index([appointmentSlotId])
+  @@index([status])
+}
+
+model VitalRecord {
+  id                 String                  @id @default(uuid()) @db.Uuid
+  patientId          String                  @db.Uuid
+  appointmentId      String?                 @db.Uuid
+  hospitalId         String                  @db.Uuid
+  temperature        Decimal?                @db.Decimal(4, 1)
+  systolicBP         Int?
+  diastolicBP        Int?
+  heartRate          Int?
+  oxygenSaturation   Decimal?                @db.Decimal(5, 2)
+  respiratoryRate    Int?
+  weight             Decimal?                @db.Decimal(6, 2)
+  height             Decimal?                @db.Decimal(5, 2)
+  bmi                Decimal?                @db.Decimal(5, 2)
+  bloodGlucose       Decimal?                @db.Decimal(6, 2)
+  source             VitalSource
+  verificationStatus VitalVerificationStatus @default(UNVERIFIED)
+  recordedByUserId   String                  @db.Uuid
+  recordedAt         DateTime                @default(now())
+  patient            PatientProfile          @relation(fields: [patientId], references: [id], onDelete: Restrict)
+  appointment        Appointment?            @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+  hospital           Hospital                @relation(fields: [hospitalId], references: [id], onDelete: Restrict)
+  recordedByUser     User                    @relation("VitalRecordedBy", fields: [recordedByUserId], references: [id], onDelete: Restrict)
+  createdAt          DateTime                @default(now())
+  updatedAt          DateTime                @updatedAt
+
+  @@index([patientId, recordedAt])
+  @@index([appointmentId])
+  @@index([hospitalId, recordedAt])
+}
+
+model TriageRecord {
+  id             String             @id @default(uuid()) @db.Uuid
+  appointmentId  String             @db.Uuid
+  patientId      String             @db.Uuid
+  hospitalId     String             @db.Uuid
+  nurseId        String             @db.Uuid
+  chiefComplaint String
+  triageNotes    String?
+  urgencyLevel   AppointmentUrgency
+  appointment    Appointment        @relation(fields: [appointmentId], references: [id], onDelete: Restrict)
+  patient        PatientProfile     @relation(fields: [patientId], references: [id], onDelete: Restrict)
+  hospital       Hospital           @relation(fields: [hospitalId], references: [id], onDelete: Restrict)
+  nurse          NurseProfile       @relation(fields: [nurseId], references: [id], onDelete: Restrict)
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  @@index([appointmentId, createdAt])
+  @@index([patientId, createdAt])
+  @@index([hospitalId, createdAt])
+}
+
+model SymptomAssessment {
+  id                      String             @id @default(uuid()) @db.Uuid
+  patientId               String             @db.Uuid
+  hospitalId              String             @db.Uuid
+  appointmentId           String?            @db.Uuid
+  symptomsText            String
+  duration                String?
+  severity                String?
+  possibleConditions      Json?
+  recommendedDepartmentId String?            @db.Uuid
+  urgencyLevel            AppointmentUrgency
+  recommendedAction       String
+  explanation             String
+  redFlagDetected         Boolean            @default(false)
+  assessmentVersion       String
+  patient                 PatientProfile     @relation(fields: [patientId], references: [id], onDelete: Restrict)
+  hospital                Hospital           @relation(fields: [hospitalId], references: [id], onDelete: Restrict)
+  appointment             Appointment?       @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+  recommendedDepartment   Department?        @relation("RecommendedDepartment", fields: [recommendedDepartmentId], references: [id], onDelete: SetNull)
+  createdAt               DateTime           @default(now())
+  updatedAt               DateTime           @updatedAt
+
+  @@index([patientId, createdAt])
+  @@index([hospitalId, createdAt])
+  @@index([appointmentId])
+}
+
+model Consultation {
+  id                   String         @id @default(uuid()) @db.Uuid
+  appointmentId        String         @unique @db.Uuid
+  patientId            String         @db.Uuid
+  doctorId             String         @db.Uuid
+  hospitalId           String         @db.Uuid
+  chiefComplaint       String
+  clinicalObservations String?
+  consultationNotes    String?
+  diagnosis            String?
+  treatmentPlan        String?
+  followUpRequired     Boolean        @default(false)
+  followUpDate         DateTime?      @db.Date
+  startedAt            DateTime
+  completedAt          DateTime?
+  appointment          Appointment    @relation(fields: [appointmentId], references: [id], onDelete: Restrict)
+  patient              PatientProfile @relation(fields: [patientId], references: [id], onDelete: Restrict)
+  doctor               DoctorProfile  @relation(fields: [doctorId], references: [id], onDelete: Restrict)
+  hospital             Hospital       @relation(fields: [hospitalId], references: [id], onDelete: Restrict)
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+
+  @@index([patientId, createdAt])
+  @@index([doctorId, createdAt])
+  @@index([hospitalId, createdAt])
+}
+
+model Notification {
+  id         String           @id @default(uuid()) @db.Uuid
+  userId     String           @db.Uuid
+  hospitalId String?          @db.Uuid
+  title      String
+  message    String
+  type       NotificationType
+  read       Boolean          @default(false)
+  readAt     DateTime?
+  user       User             @relation(fields: [userId], references: [id], onDelete: Restrict)
+  hospital   Hospital?        @relation(fields: [hospitalId], references: [id], onDelete: SetNull)
+  createdAt  DateTime         @default(now())
+
+  @@index([userId, read, createdAt])
+  @@index([hospitalId, createdAt])
+}
+
+model AuditLog {
+  id           String    @id @default(uuid()) @db.Uuid
+  userId       String    @db.Uuid
+  hospitalId   String?   @db.Uuid
+  action       String
+  resourceType String
+  resourceId   String?
+  metadata     Json?
+  ipAddress    String?
+  userAgent    String?
+  user         User      @relation(fields: [userId], references: [id], onDelete: Restrict)
+  hospital     Hospital? @relation(fields: [hospitalId], references: [id], onDelete: SetNull)
+  createdAt    DateTime  @default(now())
+
+  @@index([userId, createdAt])
+  @@index([hospitalId, createdAt])
+  @@index([resourceType, resourceId])
+  @@index([action, createdAt])
 }

@@ -29,7 +29,7 @@ Currently preserved prototype features include:
 - Simulated in-app appointment notifications
 - Administrator CSV/XLSX import
 
-Phase 1 also adds an Express API health endpoint, centralized errors, environment validation, security middleware, Prisma configuration, and initial `User` and `Hospital` models. Prototype data remains in browser storage until later phases migrate each workflow.
+The backend now includes the Phase 2 relational schema, generated-but-unapplied initial migration, repository/service layers, validated foundational REST endpoints, fictional seed script, and transactional appointment capacity protection. Prototype frontend data remains in browser storage until later phases migrate each workflow.
 
 ## Planned user roles
 
@@ -53,7 +53,7 @@ The nurse role exists in the initial database role enum, but no nurse dashboard 
 
 ## Existing project status
 
-Phase 1 foundation is implemented. The frontend is preserved as a working prototype under `client/`. The only operational backend endpoint is `GET /api/health`; authentication and resource APIs are intentionally deferred. Firebase configuration is retained but is not imported by the active prototype. See [the current-system audit](docs/CURRENT_SYSTEM_AUDIT.md) for exact limitations and migration details.
+Phase 2 data/backend foundation is implemented. The frontend remains a working prototype under `client/`. Foundational database routes exist but are explicitly unauthenticated development routes until Phase 3; do not publish them. Firebase configuration remains preserved and unused. A real PostgreSQL connection, migration application, and seed execution still require `server/.env`. See [the API documentation](docs/API_DOCUMENTATION.md) and [database design](docs/DATABASE_DESIGN.md).
 
 ## Installation
 
@@ -90,6 +90,7 @@ Backend:
 cd server
 npm run dev
 npm start
+npm test
 ```
 
 The frontend defaults to `http://localhost:5173`; the API defaults to `http://localhost:5000`, with health available at `http://localhost:5000/api/health`.
@@ -121,8 +122,8 @@ The frontend defaults to `http://localhost:5173`; the API defaults to `http://lo
 
 ## Project roadmap
 
-1. Existing project audit, GitHub setup, and full-stack foundation — current phase
-2. PostgreSQL database and backend development
+1. Existing project audit, GitHub setup, and full-stack foundation — complete
+2. PostgreSQL database and backend development — implementation complete; migration awaits configured PostgreSQL
 3. Authentication and role-based access control
 4. Hospital, department, doctor, and schedule management
 5. Patient appointment booking and PWA
@@ -157,13 +158,14 @@ Backend (`server/.env`):
 
 ## Database setup status
 
-The Prisma client can be generated from the initial schema, but no migration is committed and no database connection is claimed in Phase 1. Create a PostgreSQL database, place its real connection string only in `server/.env`, then run:
+The complete Phase 2 schema, migration SQL, and seed script are committed, but no database connection, applied migration, or executed seed is claimed. Create PostgreSQL, place its real connection string only in `server/.env`, then run:
 
 ```bash
 cd server
 npx prisma validate
 npx prisma generate
-npx prisma migrate dev --name init_user_hospital
+npx prisma migrate dev
+npx prisma db seed
 ```
 
-The last command connects to PostgreSQL and should be run only after the Phase 1 models are reviewed.
+The last two commands connect to PostgreSQL. See [database setup](docs/DATABASE_SETUP.md) before running them.

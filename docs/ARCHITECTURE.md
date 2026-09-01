@@ -29,9 +29,9 @@ Hospital Information
 
 The Patient Dashboard, Doctor Dashboard, future Nurse/Triage Dashboard, and Admin Dashboard will all communicate with the same backend. The API—not the browser—will enforce identity, role, hospital scope, record ownership, and workflow rules.
 
-## Current Phase 1 boundaries
+## Current Phase 2 boundaries
 
-The React client is preserved under `client/`. Existing feature data still uses `localStorage`; the new API service layer is not wired into those workflows yet. The Express server provides only infrastructure and `GET /api/health`. Prisma defines only `User`, `Hospital`, and `UserRole`; no database migration or connection result is claimed.
+The React client is preserved under `client/`, and existing feature data still uses `localStorage`; the new REST modules are not wired into those workflows yet. Express now exposes validated foundational hospital, department, doctor, schedule, patient-card, appointment, and vital routes through controllers/services/repositories. The complete Phase 2 Prisma schema and initial migration SQL exist, but no live database migration or seed result is claimed. Authentication and RBAC are deliberately deferred to Phase 3, so non-health routes are development-only.
 
 ## Backend layers
 
@@ -51,7 +51,7 @@ Current pages and UI are intentionally preserved. Incremental refactoring will i
 
 ## Initial data relationships
 
-In Phase 1, a hospital has many optional associated users and a user can optionally belong to one hospital. This supports the immediate foundation without prematurely modeling the complete domain. Patient membership across multiple hospitals, doctor affiliations, profiles, departments, schedules, appointments, and clinical records require reviewed models in later phases rather than overloading this provisional relationship.
+Users are global identities with role-specific optional profiles. Patients have no owning hospital and join facilities through `PatientHospitalRecord`, cards, appointments, and clinical records. Doctors join hospitals through `DoctorHospital` and departments through `DoctorDepartment`. Admin and nurse profiles have one hospital in the academic prototype. Cross-table facility consistency is enforced in services where Prisma cannot express it directly.
 
 ## Security architecture direction
 

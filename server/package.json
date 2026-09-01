@@ -2,7 +2,7 @@
   "name": "ai-hospital-management-api",
   "version": "0.1.0",
   "private": true,
-  "description": "Phase 1 REST API foundation for the AI-Powered Hospital Management System",
+  "description": "Core REST and PostgreSQL data foundation for the AI-Powered Hospital Management System",
   "type": "module",
   "main": "src/server.js",
   "scripts": {
@@ -12,7 +12,9 @@
     "prisma:validate": "prisma validate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
-    "seed": "prisma db seed"
+    "seed": "prisma db seed",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "prisma": {
     "seed": "node prisma/seed.js"
@@ -31,6 +33,7 @@
     "zod": "^4.1.5"
   },
   "devDependencies": {
-    "prisma": "^6.19.0"
+    "prisma": "^6.19.0",
+    "vitest": "^3.2.4"
   }
 }
