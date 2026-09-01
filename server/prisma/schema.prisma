@@ -1,0 +1,47 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  PATIENT
+  DOCTOR
+  NURSE
+  ADMIN
+}
+
+model User {
+  id           String    @id @default(uuid()) @db.Uuid
+  email        String    @unique
+  passwordHash String
+  role         UserRole
+  active       Boolean   @default(true)
+  hospitalId   String?   @db.Uuid
+  hospital     Hospital? @relation(fields: [hospitalId], references: [id], onDelete: SetNull)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([hospitalId])
+  @@index([role, active])
+}
+
+model Hospital {
+  id           String   @id @default(uuid()) @db.Uuid
+  name         String
+  hospitalCode String   @unique
+  address      String
+  region       String
+  phone        String
+  email        String   @unique
+  active       Boolean  @default(true)
+  users        User[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([name])
+  @@index([region, active])
+}
