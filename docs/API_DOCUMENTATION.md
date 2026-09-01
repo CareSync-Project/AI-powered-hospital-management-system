@@ -181,3 +181,14 @@ Appointment creation:
 The service validates all patient/hospital/department/doctor/assignment/card/slot relationships. Slot count increment and appointment creation share a serializable transaction.
 
 Patient vitals accept optional positive measurements plus required `hospitalId` and optional `appointmentId`/`recordedAt`. The API forces `source=PATIENT`, `verificationStatus=UNVERIFIED`, and the authenticated recorder. BMI is calculated only when both weight and height are present.
+
+## Phase 7 symptom-assessment endpoints
+
+| Method | Endpoint | Access | Purpose |
+|---|---|---|---|
+| POST | `/api/patient/symptom-assessments` | PATIENT | Create a rate-limited preliminary rule-based assessment |
+| GET | `/api/patient/symptom-assessments` | PATIENT | List the authenticated patient's assessments |
+| GET | `/api/patient/symptom-assessments/:id` | PATIENT owner | Read one owned assessment |
+| GET | `/api/clinical/appointments/:id/symptom-assessment` | Assigned DOCTOR or same-hospital NURSE | Read appointment-linked pre-visit context |
+
+Creation accepts `hospitalId`, `symptomsText`, optional `symptoms`, optional `duration`, `severity`, voluntary `pregnancyStatus`, and optional `additionalNotes`. Patient identity is derived from authentication. Responses declare `assessmentMethod: RULE_BASED`, provide explanations and a disclaimer, and do not return probabilities. A patient booking may include an owned, same-hospital `symptomAssessmentId`; the booking transaction links it after all existing slot and card checks pass.

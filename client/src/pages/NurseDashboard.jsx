@@ -8,6 +8,7 @@ import VitalEntryForm from '../components/nurse/VitalEntryForm';
 import VitalSummary from '../components/nurse/VitalSummary';
 import TriageForm from '../components/nurse/TriageForm';
 import UrgencyBadge from '../components/nurse/UrgencyBadge';
+import ClinicalAssessmentSummary from '../components/symptoms/ClinicalAssessmentSummary';
 import '../clinical.css';
 
 export default function NurseDashboard() {
@@ -29,6 +30,7 @@ export default function NurseDashboard() {
       {error && <p className="clinical-error">{error}</p>}
       {!selected ? <div className="clinical-empty"><ClipboardList/><h2>Select a patient appointment</h2><p>Open a record to check in, capture vitals, triage, or move the patient to the queue.</p></div> : <>
         <div className="patient-clinical-heading"><div><h2>{selected.patient.firstName} {selected.patient.lastName}</h2><p>{selected.appointmentNumber} · {selected.department.name}</p><p>Reason: {selected.reasonForVisit}</p></div><UrgencyBadge level={selected.triageRecords?.[0]?.urgencyLevel}/></div>
+        <ClinicalAssessmentSummary assessment={selected.symptomAssessments?.[0]} audience="nurse" />
         {selected.status === 'CONFIRMED' && <button onClick={() => action(() => clinicalWorkflowService.checkIn(selected.id))}>Check in patient</button>}
         {['CHECKED_IN','TRIAGED','WAITING'].includes(selected.status) && <><h3><Activity/> Vital records</h3><VitalSummary vital={vitals[0]}/>{vitals[0]?.source === 'PATIENT' && vitals[0]?.verificationStatus === 'UNVERIFIED' && <button onClick={async () => { await vitalService.verify(vitals[0].id); setVitals((await vitalService.appointment(selected.id)).data); }}>Verify reviewed patient entry</button>}{selected.status === 'CHECKED_IN' && <VitalEntryForm onSubmit={async data => { await vitalService.record(selected.id, data); setVitals((await vitalService.appointment(selected.id)).data); }}/>}</>}
         {selected.status === 'CHECKED_IN' && <><h3>Triage</h3><TriageForm onSubmit={data => action(() => triageService.save(selected.id, data))}/></>}

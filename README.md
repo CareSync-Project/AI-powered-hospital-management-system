@@ -160,7 +160,7 @@ Backend (`server/.env`):
 
 ## Database setup status
 
-The complete Phase 2 schema, migration SQL, and seed script are committed, but no database connection, applied migration, or executed seed is claimed. Create PostgreSQL, place its real connection string only in `server/.env`, then run:
+The PostgreSQL development database is configured locally, the existing migrations have been applied, and the fictional development seed has been run. Each environment still requires its own private `DATABASE_URL`; no credential is committed. Verify a target environment with:
 
 ```bash
 cd server
@@ -171,3 +171,9 @@ npx prisma db seed
 ```
 
 The last two commands connect to PostgreSQL. See [database setup](docs/DATABASE_SETUP.md) before running them.
+
+## Phase 7 status
+
+Phase 7 adds an authenticated, PostgreSQL-backed, rule-based preliminary symptom assessment. It normalizes common symptom language, screens urgent red flags first, ranks a small set of illustrative possibilities without fake probabilities, resolves recommendations against real hospital departments, integrates non-emergency results with booking, and exposes linked results to authorised nurses/doctors as advisory context. It does not train a machine-learning model, diagnose disease, set nurse triage, or write the doctor's diagnosis.
+
+See [AI symptom assessment](docs/AI_SYMPTOM_ASSESSMENT.md), [knowledge base](docs/SYMPTOM_KNOWLEDGE_BASE.md), and [AI safety](docs/AI_SAFETY.md).

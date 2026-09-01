@@ -102,7 +102,7 @@ export const appointmentService = {
       }, transaction);
     }, { isolationLevel: 'Serializable', maxWait: 5000, timeout: 10000 });
   },
-  async createPatientBooking({ patientId, userId, slotId, patientCardId, reasonForVisit, symptomsSummary, request }, database = prisma) {
+  async createPatientBooking({ patientId, userId, slotId, patientCardId, symptomAssessmentId, reasonForVisit, symptomsSummary, request }, database = prisma) {
     return database.$transaction(async (tx) => {
       const [patient, slot, card] = await Promise.all([
         patientRepository.findById(patientId, tx), appointmentRepository.findSlot(slotId, tx), patientCardRepository.findById(patientCardId, tx),
@@ -113,6 +113,8 @@ export const appointmentService = {
       await validateSlotSchedule(slot, tx);
       if (!card || card.patientId !== patientId || card.hospitalId !== slot.hospitalId || !card.active) throw new AppError('Patient card is not eligible for this booking', 400);
       if (card.verificationStatus !== 'VERIFIED') throw new AppError('A verified Hospital or NHIS card is required for prebooking', 403);
+      const assessment = symptomAssessmentId ? await tx.symptomAssessment.findUnique({ where: { id: symptomAssessmentId } }) : null;
+      if (symptomAssessmentId && (!assessment || assessment.patientId !== patientId || assessment.hospitalId !== slot.hospitalId || assessment.appointmentId)) throw new AppError('Symptom assessment is not eligible for this booking', 403);
       await validateAppointmentContext({ patientId, hospitalId: slot.hospitalId, departmentId: slot.departmentId, doctorId: slot.doctorId, patientCardId }, tx);
       const conflict = await appointmentRepository.findPatientConflict(patientId, slot.date, slot.startTime, slot.endTime, null, tx);
       if (conflict) throw new AppError('You already have a conflicting appointment', 409);
@@ -120,6 +122,7 @@ export const appointmentService = {
       if (reservation.count !== 1) throw new AppError('Appointment slot was booked concurrently; choose another slot', 409);
       await tx.patientHospitalRecord.upsert({ where: { patientId_hospitalId: { patientId, hospitalId: slot.hospitalId } }, update: { status: 'ACTIVE' }, create: { patientId, hospitalId: slot.hospitalId, hospitalPatientNumber: `PRE-${patientId.slice(0, 8).toUpperCase()}`, status: 'ACTIVE', firstVisitAt: slot.date } });
       const appointment = await appointmentRepository.create({ patientId, hospitalId: slot.hospitalId, departmentId: slot.departmentId, doctorId: slot.doctorId, patientCardId, appointmentSlotId: slot.id, appointmentNumber: createAppointmentNumber(), appointmentDate: slot.date, startTime: slot.startTime, endTime: slot.endTime, reasonForVisit, symptomsSummary: symptomsSummary || null, urgency: 'ROUTINE', bookingMethod: 'PATIENT_PWA', status: 'PENDING' }, tx);
+      if (assessment) { await tx.symptomAssessment.update({ where: { id: assessment.id }, data: { appointmentId: appointment.id } }); await auditService.record({ userId, hospitalId: slot.hospitalId, action: 'SYMPTOM_ASSESSMENT_LINKED_TO_APPOINTMENT', resourceType: 'SymptomAssessment', resourceId: assessment.id, metadata: { appointmentId: appointment.id }, request }, tx); }
       await notificationService.create({ userId, hospitalId: slot.hospitalId, title: 'Appointment booked', message: `Appointment ${appointment.appointmentNumber} has been booked successfully.`, type: 'APPOINTMENT' }, tx);
       await auditService.record({ userId, hospitalId: slot.hospitalId, action: 'APPOINTMENT_CREATED', resourceType: 'Appointment', resourceId: appointment.id, request }, tx);
       return appointment;

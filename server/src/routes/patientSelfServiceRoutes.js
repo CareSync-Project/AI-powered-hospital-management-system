@@ -9,6 +9,9 @@ import { createPatientCardSchema } from '../validators/patientCardValidators.js'
 import { availabilitySchema, cancellationSchema, patientBookingSchema, patientProfileUpdateSchema, recommendationSchema, rescheduleSchema } from '../validators/patientSelfServiceValidators.js';
 import { clinicalController } from '../controllers/clinicalController.js';
 import { clinicalVitalSchema } from '../validators/clinicalValidators.js';
+import { symptomAssessmentController } from '../controllers/symptomAssessmentController.js';
+import { createSymptomAssessmentSchema } from '../validators/symptomAssessmentValidators.js';
+import { symptomRateLimiter } from '../middleware/symptomRateLimiter.js';
 
 const router = Router();
 router.use(authenticate, requireRole('PATIENT'));
@@ -33,4 +36,7 @@ router.get('/vitals', asyncHandler(clinicalController.patientVitals));
 router.post('/vitals', validate({ body: clinicalVitalSchema.extend({ hospitalId: uuid, appointmentId: uuid.optional().nullable() }) }), asyncHandler(clinicalController.patientVitalCreate));
 router.get('/appointments/:id/progress', validate({ params: idParamsSchema }), asyncHandler(clinicalController.progress));
 router.get('/consultations/:id', validate({ params: idParamsSchema }), asyncHandler(clinicalController.patientConsultation));
+router.post('/symptom-assessments', symptomRateLimiter, validate({ body: createSymptomAssessmentSchema }), asyncHandler(symptomAssessmentController.create));
+router.get('/symptom-assessments', asyncHandler(symptomAssessmentController.list));
+router.get('/symptom-assessments/:id', validate({ params: idParamsSchema }), asyncHandler(symptomAssessmentController.get));
 export default router;

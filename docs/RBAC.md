@@ -32,3 +32,15 @@ Frontend guards improve navigation only. Express middleware, authenticated profi
 Patient ownership uses the authenticated `PatientProfile.id`. Admin and nurse scope comes from their role profile, not a supplied `hospitalId`. Doctor patient access requires a non-cancelled/non-missed appointment assigned to that doctor; appointment access always requires exact assignment. Doctor hospital actions require an active affiliation. Nurse clinical write workflows remain Phase 6.
 
 Public endpoints are `GET /api/health`, safe active hospital discovery, active departments, safe doctor directory/profile, and public schedule discovery. All mutation routes and patient/appointment records are protected. Hospital provisioning itself remains a system operation; `POST /api/hospitals` is not available as public or ordinary admin self-provisioning.
+
+## Symptom-assessment permissions
+
+| Capability | PATIENT | DOCTOR | NURSE | ADMIN |
+|---|---|---|---|---|
+| Create preliminary assessment | Own identity | No | No | No |
+| Read assessment history | Own only | No global access | No global access | No |
+| Read appointment-linked assessment | Own booking context | Assigned appointment only | Same-hospital workflow only | No general clinical access |
+| Change nurse triage | No | No | Authorised triage only | No |
+| Write diagnosis from assessment | No | Clinician must enter independently | No | No |
+
+The submitted hospital cannot expand access. Clinical reads verify the actual appointment, assigned doctor, or nurse hospital in PostgreSQL.

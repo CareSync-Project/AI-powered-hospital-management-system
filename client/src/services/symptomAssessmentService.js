@@ -1,0 +1,1 @@
+import api from'./api';export const symptomAssessmentService={create:data=>api.post('/patient/symptom-assessments',data),list:()=>api.get('/patient/symptom-assessments'),get:id=>api.get(`/patient/symptom-assessments/${id}`),clinical:id=>api.get(`/clinical/appointments/${id}/symptom-assessment`)};
