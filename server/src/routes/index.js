@@ -10,12 +10,14 @@ import adminRouter from './adminRoutes.js';
 import { departmentScheduleRouter, doctorScheduleRouter, scheduleExceptionRouter } from './schedulingManagementRoutes.js';
 import patientSelfServiceRouter from './patientSelfServiceRoutes.js';
 import clinicalRouter from './clinicalRoutes.js';
+import superAdminRouter from './superAdminRoutes.js';
 
 const apiRouter = Router();
 
 apiRouter.use('/health', healthRouter);
 apiRouter.use('/auth', authRouter);
 apiRouter.use('/admin', adminRouter);
+apiRouter.use('/super-admin', superAdminRouter);
 apiRouter.use('/department-schedules', departmentScheduleRouter);
 apiRouter.use('/doctor-schedules', doctorScheduleRouter);
 apiRouter.use('/schedule-exceptions', scheduleExceptionRouter);

@@ -48,6 +48,7 @@ async function main() {
     skipDuplicates: true,
   });
 
+  await upsertUser('owner@caresync-demo.invalid', 'SUPER_ADMIN', passwordHash);
   const adminUser = await upsertUser('admin@voltacare-demo.invalid', 'ADMIN', passwordHash);
   const nurseUser = await upsertUser('nurse.ama@voltacare-demo.invalid', 'NURSE', passwordHash);
   const patientUserOne = await upsertUser('patient.kofi@voltacare-demo.invalid', 'PATIENT', passwordHash);

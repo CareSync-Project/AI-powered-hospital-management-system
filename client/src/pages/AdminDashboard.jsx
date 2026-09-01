@@ -2,6 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { LogOut, Activity, ShieldPlus, Users, Database, LayoutDashboard, Upload, CheckCircle, Plus, FileSpreadsheet, Clock, Mail } from 'lucide-react';
 import Phase4Management from '../components/admin/Phase4Management';
+import NurseManagement from '../components/admin/NurseManagement';
+
+const readLegacyArray = (key) => {
+  try {
+    const value = JSON.parse(localStorage.getItem(key) || '[]');
+    return Array.isArray(value) ? value : [];
+  } catch {
+    return [];
+  }
+};
 
 const AdminDashboard = () => {
   const { user, logout } = useAuth();
@@ -25,9 +35,9 @@ const AdminDashboard = () => {
   const [uploadStatus, setUploadStatus] = useState('');
 
   const loadData = () => {
-    const users = JSON.parse(localStorage.getItem('hospital_users') || '[]');
-    const appointments = JSON.parse(localStorage.getItem('hospital_appointments') || '[]');
-    const requests = JSON.parse(localStorage.getItem('hospital_id_requests') || '[]');
+    const users = readLegacyArray('hospital_users');
+    const appointments = readLegacyArray('hospital_appointments');
+    const requests = readLegacyArray('hospital_id_requests');
 
     const hUsers = users.filter(u => u.hospitalId === user.hospitalId);
     const independentDoctors = users.filter(u => u.role === 'doctor' && !u.hospitalId);
@@ -78,7 +88,7 @@ const AdminDashboard = () => {
     const newId = `PAT-${user.hospitalId.substr(-4)}-${Math.floor(Math.random() * 10000)}`;
     
     // 1. Update User Record
-    const users = JSON.parse(localStorage.getItem('hospital_users') || '[]');
+    const users = readLegacyArray('hospital_users');
     const userIndex = users.findIndex(u => u.id === req.patientId);
     if (userIndex > -1) {
       if (!users[userIndex].hospitalPatientIds) {
@@ -89,7 +99,7 @@ const AdminDashboard = () => {
     }
 
     // 2. Send Message to Patient Inbox
-    const msgs = JSON.parse(localStorage.getItem('hospital_messages') || '[]');
+    const msgs = readLegacyArray('hospital_messages');
     msgs.push({
       id: Date.now().toString(),
       patientId: req.patientId,
@@ -101,7 +111,7 @@ const AdminDashboard = () => {
     localStorage.setItem('hospital_messages', JSON.stringify(msgs));
 
     // 3. Remove Request
-    const requests = JSON.parse(localStorage.getItem('hospital_id_requests') || '[]');
+    const requests = readLegacyArray('hospital_id_requests');
     const updatedRequests = requests.filter(r => r.id !== req.id);
     localStorage.setItem('hospital_id_requests', JSON.stringify(updatedRequests));
 
@@ -137,7 +147,7 @@ const AdminDashboard = () => {
       </div>
 
       <div className="flex-wrap" style={{ gap: '1rem', marginBottom: '2rem', borderBottom: '1px solid var(--glass-border)', paddingBottom: '1rem' }}>
-        {['hospital', 'departments', 'doctors', 'schedules'].map((tab) => (
+        {['hospital', 'departments', 'doctors', 'nurses', 'schedules'].map((tab) => (
           <button key={tab} onClick={() => setActiveTab(tab)} className={`btn ${activeTab === tab ? 'btn-primary' : ''}`} style={{ textTransform: 'capitalize' }}>{tab}</button>
         ))}
         <button onClick={() => setActiveTab('overview')} className={`btn ${activeTab === 'overview' ? 'btn-primary' : ''}`} style={{ background: activeTab === 'overview' ? 'var(--color-primary)' : 'transparent', color: activeTab === 'overview' ? 'white' : 'var(--color-text-muted)' }}>AI Overview</button>
@@ -154,6 +164,7 @@ const AdminDashboard = () => {
       </div>
 
       {['hospital', 'departments', 'doctors', 'schedules'].includes(activeTab) && <Phase4Management section={activeTab} />}
+      {activeTab === 'nurses' && <NurseManagement />}
 
       {activeTab === 'overview' && (
         <>

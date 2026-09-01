@@ -47,6 +47,8 @@ Development-only login identifiers use the `.invalid` domain. Their shared local
 DemoOnly!ChangeMe2026
 ```
 
+The seeded development system owner is `owner@caresync-demo.invalid`. It uses the development-only password above and must be replaced for any shared or production environment.
+
 The database receives only a bcrypt hash. Change these credentials for any shared environment; they are not production accounts.
 
 ## Time and date strategy

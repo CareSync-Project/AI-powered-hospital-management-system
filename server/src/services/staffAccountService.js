@@ -18,6 +18,15 @@ async function adminHospital(auth) {
 }
 
 export const staffAccountService = {
+  listNurses(auth) {
+    const hospitalId = getAdminHospitalId(auth);
+    return prisma.nurseProfile.findMany({
+      where: { hospitalId },
+      orderBy: [{ active: 'desc' }, { lastName: 'asc' }],
+      include: { user: { select: { id: true, email: true, active: true, lastLoginAt: true } } },
+    });
+  },
+
   async createDoctor(auth, data, request) {
     const hospitalId = await adminHospital(auth);
     await ensureAvailableEmail(data.email);

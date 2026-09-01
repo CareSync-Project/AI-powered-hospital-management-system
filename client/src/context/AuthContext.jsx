@@ -55,5 +55,5 @@ export const AuthProvider = ({ children }) => {
     changePassword,
   }), [auth, isLoading]);
 
-  return <AuthContext.Provider value={value}>{!isLoading && children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

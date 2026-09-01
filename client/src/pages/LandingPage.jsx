@@ -21,6 +21,38 @@ const LandingPage = () => {
   const navigate = useNavigate();
   const [error, setError] = useState('');
 
+  const resetAuthForm = () => {
+    setFormData({ firstName: '', lastName: '', otherNames: '', phone: '', dateOfBirth: '', gender: '', email: '', password: '', confirmPassword: '' });
+    setError('');
+    setShowPassword(false);
+  };
+
+  const openAuthModal = (loginMode, selectedRole = 'patient') => {
+    resetAuthForm();
+    setRole(selectedRole);
+    setIsLogin(loginMode);
+    setShowAuthModal(true);
+  };
+
+  const getErrorMessage = (err) => {
+    if (Array.isArray(err?.details) && err.details.length > 0) {
+      const passwordErrors = err.details
+        .filter((detail) => detail.path === 'password')
+        .map((detail) => detail.message)
+        .filter(Boolean);
+      const otherErrors = err.details
+        .filter((detail) => detail.path !== 'password')
+        .map((detail) => detail.message)
+        .filter(Boolean);
+      const messages = [
+        ...(passwordErrors.length ? [`Set a stronger password: ${passwordErrors.join(', ').toLowerCase()}`] : []),
+        ...otherErrors,
+      ];
+      return messages.join('. ');
+    }
+    return err?.message || 'Unable to complete the request. Please try again.';
+  };
+
   // Chatbot State
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [chatMessages, setChatMessages] = useState([
@@ -40,7 +72,7 @@ const LandingPage = () => {
     try {
       if (isLogin) {
         const authenticatedUser = await login(formData.email, formData.password);
-        const destinations = { PATIENT: '/patient-dashboard', DOCTOR: '/doctor-dashboard', NURSE: '/nurse-dashboard', ADMIN: '/admin-dashboard' };
+        const destinations = { SUPER_ADMIN: '/super-admin-dashboard', PATIENT: '/patient-dashboard', DOCTOR: '/doctor-dashboard', NURSE: '/nurse-dashboard', ADMIN: '/admin-dashboard' };
         navigate(destinations[authenticatedUser.role] || '/access-denied');
       } else {
         if (role !== 'patient') throw new Error('Staff accounts are created by a hospital administrator. Please sign in with your issued account.');
@@ -50,7 +82,7 @@ const LandingPage = () => {
       }
       
     } catch (err) {
-      setError(err.message);
+      setError(getErrorMessage(err));
     }
   };
 
@@ -90,10 +122,10 @@ const LandingPage = () => {
             CareSync
           </div>
           <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-            <button className="btn hover-lift" onClick={() => { setIsLogin(true); setShowAuthModal(true); }} style={{ color: 'var(--color-primary)', fontWeight: '600', background: 'transparent' }}>
+            <button className="btn hover-lift" onClick={() => openAuthModal(true)} style={{ color: 'var(--color-primary)', fontWeight: '600', background: 'transparent' }}>
               Log in
             </button>
-            <button className="btn hover-lift" onClick={() => { setIsLogin(false); setShowAuthModal(true); }} style={{ backgroundColor: 'var(--color-secondary)', color: 'var(--color-text-main)' }}>
+            <button className="btn hover-lift" onClick={() => openAuthModal(false)} style={{ backgroundColor: 'var(--color-secondary)', color: 'var(--color-text-main)' }}>
               Get Started
             </button>
           </div>
@@ -127,14 +159,14 @@ const LandingPage = () => {
                 <button 
                   className="btn hover-lift" 
                   style={{ padding: '1rem 2rem', fontSize: '1.125rem', backgroundColor: 'var(--color-secondary)', color: '#fff', border: '2px solid var(--color-secondary)' }}
-                  onClick={() => { setRole('patient'); setIsLogin(false); setShowAuthModal(true); }}
+                  onClick={() => openAuthModal(false, 'patient')}
                 >
                   Book Appointment <ArrowRight size={20} style={{ marginLeft: '0.5rem' }} />
                 </button>
                 <button 
                   className="btn hover-lift" 
                   style={{ padding: '1rem 2rem', fontSize: '1.125rem', backgroundColor: 'transparent', color: 'var(--color-primary)', border: '2px solid var(--color-primary)' }}
-                  onClick={() => { setRole('doctor'); setIsLogin(true); setShowAuthModal(true); }}
+                  onClick={() => openAuthModal(true, 'doctor')}
                 >
                   Doctor Portal
                 </button>
@@ -312,7 +344,7 @@ const LandingPage = () => {
                 </div>
               )}
 
-              <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              <form onSubmit={handleSubmit} autoComplete="off" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                 {!isLogin && role === 'patient' && <>
                   <div className="auth-form-grid">
                     <div><label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>First name</label><input type="text" name="firstName" required className="input-field" value={formData.firstName} onChange={handleInputChange} /></div>
@@ -330,20 +362,25 @@ const LandingPage = () => {
                   <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>
                     Email address
                   </label>
-                  <input type="email" name="email" required className="input-field" value={formData.email} onChange={handleInputChange} />
+                  <input type="email" name="email" autoComplete="off" required className="input-field" value={formData.email} onChange={handleInputChange} />
                 </div>
-
-                {!isLogin && role === 'patient' && <div><label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>Confirm password</label><input type={showPassword ? "text" : "password"} name="confirmPassword" required className="input-field" value={formData.confirmPassword} onChange={handleInputChange} /></div>}
 
                 <div>
                   <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>Password</label>
                   <div style={{ position: 'relative' }}>
-                    <input type={showPassword ? "text" : "password"} name="password" required className="input-field" value={formData.password} onChange={handleInputChange} style={{ paddingRight: '2.5rem' }} />
+                    <input type={showPassword ? "text" : "password"} name="password" autoComplete="new-password" required className="input-field" value={formData.password} onChange={handleInputChange} style={{ paddingRight: '2.5rem' }} />
                     <button type="button" onClick={() => setShowPassword(!showPassword)} style={{ position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-muted)' }}>
                       {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
                   </div>
+                  {!isLogin && role === 'patient' && (
+                    <small style={{ display: 'block', marginTop: '0.5rem', color: 'var(--color-text-muted)', lineHeight: 1.4 }}>
+                      Use at least 10 characters, including an uppercase letter, a lowercase letter, and a number.
+                    </small>
+                  )}
                 </div>
+
+                {!isLogin && role === 'patient' && <div><label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>Confirm password</label><input type={showPassword ? "text" : "password"} name="confirmPassword" autoComplete="new-password" required className="input-field" value={formData.confirmPassword} onChange={handleInputChange} /></div>}
 
                 <button type="submit" className="btn hover-lift" style={{ width: '100%', marginTop: '1rem', padding: '1rem', backgroundColor: 'var(--color-secondary)', color: '#fff', border: 'none', fontSize: '1rem' }}>
                   {isLogin ? 'Sign In' : role === 'patient' ? 'Create patient account' : 'Staff sign-up unavailable'}
@@ -353,7 +390,7 @@ const LandingPage = () => {
               <p style={{ textAlign: 'center', marginTop: '2rem', fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>
                 {isLogin ? "Don't have an account? " : "Already have an account? "}
                 <button 
-                  onClick={() => { setIsLogin(!isLogin); setError(''); }}
+                  onClick={() => { resetAuthForm(); setIsLogin(!isLogin); }}
                   style={{ background: 'none', border: 'none', color: 'var(--color-secondary)', fontWeight: '600', cursor: 'pointer' }}
                 >
                   {isLogin ? 'Sign up' : 'Log in'}

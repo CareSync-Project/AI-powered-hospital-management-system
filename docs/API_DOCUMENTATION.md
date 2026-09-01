@@ -1,5 +1,16 @@
 # API Documentation
 
+## System-owner endpoints
+
+| Method/path | Role | Purpose |
+|---|---|---|
+| `GET /super-admin/hospitals` | Super Admin | List hospitals for administrator assignment |
+| `GET /super-admin/admins` | Super Admin | List hospital administrators |
+| `POST /super-admin/admins` | Super Admin | Create and assign a hospital administrator |
+| `PATCH /super-admin/admins/:userId` | Super Admin | Activate/deactivate an administrator; deactivation revokes sessions |
+
+There is no public Super Admin or hospital-admin registration endpoint.
+
 ## Phase 6 clinical endpoints
 
 | Method/path | Role | Purpose |

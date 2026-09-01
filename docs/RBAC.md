@@ -1,5 +1,7 @@
 # Role-Based and Scoped Authorization
 
+The platform owner uses the non-clinical `SUPER_ADMIN` role. It is securely provisioned rather than publicly registered and may list hospitals, create hospital administrators, and activate/deactivate their accounts. Hospital administrators remain scoped to one hospital and manage that hospital's doctors and nurses.
+
 ## Phase 6 clinical permissions
 
 | Capability | Patient | Nurse | Doctor | Admin |

@@ -18,6 +18,7 @@ export const adminController = {
   async createNurse(request, response) {
     response.status(201).json({ success: true, data: await staffAccountService.createNurse(request.auth, request.body, request) });
   },
+  async listNurses(request, response) { response.json({ success: true, data: await staffAccountService.listNurses(request.auth) }); },
   async listDoctors(request, response) { response.json({ success: true, data: await doctorService.listForAdmin(getAdminHospitalId(request.auth)) }); },
   async updateDoctor(request, response) { const data = await doctorService.updateForHospital(request.params.doctorId, getAdminHospitalId(request.auth), request.body); await auditService.record({ userId: request.auth.userId, hospitalId: getAdminHospitalId(request.auth), action: 'DOCTOR_UPDATED', resourceType: 'DoctorProfile', resourceId: data.id, request }); response.json({ success: true, data }); },
   async assignDepartment(request, response) { const data = await doctorService.assignDepartment({ doctorId: request.params.doctorId, departmentId: request.body.departmentId, primaryDepartment: request.body.primaryDepartment, active: true, hospitalId: getAdminHospitalId(request.auth) }); await auditService.record({ userId: request.auth.userId, hospitalId: getAdminHospitalId(request.auth), action: 'DOCTOR_ASSIGNED_TO_DEPARTMENT', resourceType: 'DoctorDepartment', resourceId: data.id, request }); response.status(201).json({ success: true, data }); },
