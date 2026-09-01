@@ -7,6 +7,7 @@ import DoctorDashboard from './pages/DoctorDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import NurseDashboard from './pages/NurseDashboard';
 import './index.css';
+import './patient.css';
 
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles }) => {

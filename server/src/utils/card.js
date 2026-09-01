@@ -5,5 +5,6 @@ export function maskCardNumber(cardNumber) {
 }
 
 export function sanitizePatientCard(card) {
-  return { ...card, cardNumber: maskCardNumber(card.cardNumber) };
+  const { patient: _patient, verifiedByAdmin: _admin, ...safe } = card;
+  return { ...safe, cardNumber: maskCardNumber(card.cardNumber) };
 }

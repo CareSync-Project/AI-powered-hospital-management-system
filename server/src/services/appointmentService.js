@@ -48,6 +48,17 @@ async function validateAppointmentContext(data, client) {
   }
 }
 
+const DAYS = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
+async function validateSlotSchedule(slot, client) {
+  const dayOfWeek = DAYS[slot.date.getUTCDay()];
+  const [departmentSchedule, doctorSchedule, exception] = await Promise.all([
+    client.departmentSchedule.findFirst({ where: { hospitalId: slot.hospitalId, departmentId: slot.departmentId, dayOfWeek, active: true, startTime: { lte: slot.startTime }, endTime: { gte: slot.endTime } } }),
+    client.doctorSchedule.findFirst({ where: { hospitalId: slot.hospitalId, departmentId: slot.departmentId, doctorId: slot.doctorId, dayOfWeek, active: true, startTime: { lte: slot.startTime }, endTime: { gte: slot.endTime } } }),
+    client.scheduleException.findFirst({ where: { hospitalId: slot.hospitalId, doctorId: slot.doctorId, date: slot.date, exceptionType: { in: ['UNAVAILABLE', 'LEAVE', 'HOLIDAY'] }, OR: [{ startTime: null, endTime: null }, { startTime: { lte: slot.startTime }, endTime: { gte: slot.endTime } }] } }),
+  ]);
+  if (!departmentSchedule || !doctorSchedule || exception) throw new AppError('Appointment slot is no longer valid for this clinic schedule', 409);
+}
+
 export const appointmentService = {
   list: (filters) => appointmentRepository.findMany(filters),
   async get(id) {
@@ -92,6 +103,7 @@ export const appointmentService = {
       if (!patient?.active || patient.userId !== userId) throw new AppError('Patient profile not found', 404);
       if (!slot || slot.date < new Date(new Date().toISOString().slice(0, 10))) throw new AppError('Appointment slot is not available', 409);
       assertSlotCapacity(slot);
+      await validateSlotSchedule(slot, tx);
       if (!card || card.patientId !== patientId || card.hospitalId !== slot.hospitalId || !card.active) throw new AppError('Patient card is not eligible for this booking', 400);
       if (card.verificationStatus !== 'VERIFIED') throw new AppError('A verified Hospital or NHIS card is required for prebooking', 403);
       await validateAppointmentContext({ patientId, hospitalId: slot.hospitalId, departmentId: slot.departmentId, doctorId: slot.doctorId, patientCardId }, tx);
@@ -127,6 +139,7 @@ export const appointmentService = {
       if (!['PENDING', 'CONFIRMED'].includes(appointment.status)) throw new AppError('This appointment cannot be rescheduled', 409);
       if (!newSlot || newSlot.date < new Date(new Date().toISOString().slice(0, 10))) throw new AppError('New appointment slot is not available', 409);
       assertSlotCapacity(newSlot);
+      await validateSlotSchedule(newSlot, tx);
       const card = appointment.patientCardId && await patientCardRepository.findById(appointment.patientCardId, tx);
       if (!card || card.verificationStatus !== 'VERIFIED' || card.hospitalId !== newSlot.hospitalId) throw new AppError('A verified card for the new hospital is required', 403);
       await validateAppointmentContext({ patientId, hospitalId: newSlot.hospitalId, departmentId: newSlot.departmentId, doctorId: newSlot.doctorId, patientCardId: card.id }, tx);

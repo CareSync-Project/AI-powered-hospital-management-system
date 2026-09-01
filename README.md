@@ -1,5 +1,7 @@
 # AI-Powered Hospital Management System
 
+> Current status: Phases 1–5 foundations are implemented. Phase 5 adds the PostgreSQL-backed patient booking, card, notification portal, and installable CareSync PWA. Triage, consultation, and AI symptom assessment remain future phases.
+
 ## Project overview
 
 This final-year academic project incrementally develops an existing React hospital-management prototype into a full-stack system with a shared REST API. The preserved prototype currently provides patient, doctor, and administrator interfaces. Phase 1 establishes the repository, API, and PostgreSQL/Prisma foundations without claiming that later clinical, AI, PWA, or deployment features already exist.

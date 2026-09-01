@@ -1,5 +1,9 @@
 # Project Architecture
 
+## Phase 5 patient self-service
+
+The React patient portal uses modular patient, appointment, card, and notification services through the central in-memory-token API client. Express derives `PatientProfile` from the JWT-backed session. Services enforce ownership and hospital/card/slot relationships; Prisma serializable transactions coordinate appointment, capacity, notification, hospital relationship, and audit changes. PostgreSQL is authoritative. The service worker caches static shell resources only and treats `/api/` as network-only.
+
 ## Target context
 
 ```text

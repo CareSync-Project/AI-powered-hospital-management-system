@@ -1,4 +1,26 @@
-# Phase 3 API Documentation
+# API Documentation
+
+## Phase 5 patient self-service (`/api/patient`)
+
+All endpoints require an authenticated PATIENT; identity comes from the session.
+
+| Method/path | Purpose |
+|---|---|
+| `GET /hospitals` | Safe active hospital directory |
+| `GET /hospitals/:hospitalId/departments` | Departments and clinic days |
+| `GET /departments/:departmentId/availability` | Department availability foundation |
+| `GET /departments/:departmentId/doctors?date=YYYY-MM-DD` | Safe doctors and slots |
+| `GET /recommendation?hospitalId=&departmentId=&date=` | Earliest real slot recommendation |
+| `POST /appointments` | Transactional patient booking |
+| `GET /appointments` and `GET /appointments/:id` | Own records only |
+| `PATCH /appointments/:id/cancel` | Cancel eligible own record |
+| `PATCH /appointments/:id/reschedule` | Atomically move to `newSlotId` |
+| `GET/POST /cards` | Own masked cards / pending submission |
+| `GET/PATCH /profile` | Own profile / safe edits |
+| `GET /notifications` | Own notifications |
+| `PATCH /notifications/:id/read`, `PATCH /notifications/read-all` | Owned read state |
+
+## Phase 3 authentication and authorization
 
 ## Status and response convention
 
