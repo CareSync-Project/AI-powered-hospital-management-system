@@ -191,4 +191,8 @@ Patient vitals accept optional positive measurements plus required `hospitalId` 
 | GET | `/api/patient/symptom-assessments/:id` | PATIENT owner | Read one owned assessment |
 | GET | `/api/clinical/appointments/:id/symptom-assessment` | Assigned DOCTOR or same-hospital NURSE | Read appointment-linked pre-visit context |
 
-Creation accepts `hospitalId`, `symptomsText`, optional `symptoms`, optional `duration`, `severity`, voluntary `pregnancyStatus`, and optional `additionalNotes`. Patient identity is derived from authentication. Responses declare `assessmentMethod: RULE_BASED`, provide explanations and a disclaimer, and do not return probabilities. A patient booking may include an owned, same-hospital `symptomAssessmentId`; the booking transaction links it after all existing slot and card checks pass.
+Creation accepts `hospitalId`, `symptomsText`, optional `symptoms`, optional `duration`, `severity`, voluntary `pregnancyStatus`, and optional `additionalNotes`. Patient identity is derived from authentication. Responses declare the actual assessment method, provide explanations and a disclaimer, and do not return probabilities. A patient booking may include an owned, same-hospital `symptomAssessmentId`; the booking transaction links it after all existing slot and card checks pass.
+
+Phase 7.1 additionally accepts optional `durationDays`, `temperature`, `heartRate`, and `oxygenSaturation` with broad technical validation. Successful model assistance returns `ML_HYBRID`; service failure returns `RULE_BASED_FALLBACK`. Red flags bypass ordinary model inference.
+
+`POST /api/patient/care-assistant/message` accepts a message plus optional hospital/date context. It is PATIENT-only and rate limited. It returns a controlled intent, safe response, optional structured data, limited context, and `requiresConfirmation` for booking handoffs.

@@ -1,0 +1,1 @@
+import{chatbotService}from'../services/chatbot/chatbotService.js';export const chatbotController={async message(req,res){res.json({success:true,data:await chatbotService.respond({message:req.body.message,hospitalId:req.body.hospitalId,date:req.body.date,auth:req.auth,patient:req.auth.user.patientProfile,request:req})})}};

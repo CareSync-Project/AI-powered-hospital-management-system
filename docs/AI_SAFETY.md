@@ -8,6 +8,9 @@
 - Only a doctor can write the consultation diagnosis and treatment plan.
 - Only authorised nursing staff determine clinical triage urgency.
 - The assessment cannot overwrite nurse triage, verified vitals, consultation notes, or appointment workflow state.
+- Red-flag screening executes in Node before FastAPI is called; the model cannot downgrade an emergency.
+- Model scores are converted into qualitative match strengths, not displayed as disease probabilities.
+- FastAPI has no database credentials and is not an application security boundary.
 - Patients can read only their own assessments; clinicians require an appointment-based care relationship.
 
 ## Transparency

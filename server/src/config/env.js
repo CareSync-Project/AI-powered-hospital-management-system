@@ -10,6 +10,8 @@ const environmentSchema = z.object({
   ACCESS_TOKEN_TTL: z.string().min(2).default('15m'),
   REFRESH_TOKEN_DAYS: z.coerce.number().int().min(1).max(90).default(7),
   TRUST_PROXY: z.enum(['true', 'false']).default('false').transform((value) => value === 'true'),
+  AI_SERVICE_URL: z.url().default('http://127.0.0.1:8000'),
+  AI_SERVICE_TIMEOUT_MS: z.coerce.number().int().min(250).max(10000).default(2500),
 });
 
 const result = environmentSchema.safeParse(process.env);

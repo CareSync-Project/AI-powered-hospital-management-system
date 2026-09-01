@@ -73,20 +73,7 @@ const LandingPage = () => {
     setChatMessages(prev => [...prev, { text: userMessage, isBot: false }]);
     setChatInput('');
 
-    setTimeout(() => {
-      let botResponse = "I'm sorry, I didn't quite catch that. You can ask me about our services, booking an appointment, or how to use the portals.";
-      
-      const lowerInput = userMessage.toLowerCase();
-      if (lowerInput.includes('service') || lowerInput.includes('what do you do')) {
-        botResponse = "We provide an intelligent hospital management system. We use AI to match patients with the right doctors instantly and eliminate wait times. Features include patient portals, doctor dashboards, and admin analytics.";
-      } else if (lowerInput.includes('book') || lowerInput.includes('appointment')) {
-        botResponse = "To book an appointment, click 'Get Started' and register as a Patient. Once logged in, simply describe your symptoms and our AI will match you with the fastest available specialist!";
-      } else if (lowerInput.includes('hello') || lowerInput.includes('hi')) {
-        botResponse = "Hello! How can I assist you with CareSync today?";
-      }
-
-      setChatMessages(prev => [...prev, { text: botResponse, isBot: true }]);
-    }, 1000);
+    setChatMessages(prev => [...prev, { text: "Please sign in to use the secure Care Assistant. It can query real clinic schedules, your appointments and masked card status, and provide preliminary symptom support without making a diagnosis.", isBot: true }]);
   };
 
 
@@ -399,7 +386,7 @@ const LandingPage = () => {
             >
               <div style={{ padding: '1rem', borderBottom: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--color-primary)', color: 'var(--color-background)', borderTopLeftRadius: '24px', borderTopRightRadius: '24px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 'bold' }}>
-                  <Stethoscope size={18} /> CareSync AI
+                  <Stethoscope size={18} /> CareSync Public Help
                 </div>
                 <button onClick={() => setIsChatOpen(false)} style={{ background: 'none', border: 'none', color: 'var(--color-background)', cursor: 'pointer' }}>
                   <X size={18} />

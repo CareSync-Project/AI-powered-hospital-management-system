@@ -12,6 +12,7 @@ import { clinicalVitalSchema } from '../validators/clinicalValidators.js';
 import { symptomAssessmentController } from '../controllers/symptomAssessmentController.js';
 import { createSymptomAssessmentSchema } from '../validators/symptomAssessmentValidators.js';
 import { symptomRateLimiter } from '../middleware/symptomRateLimiter.js';
+import { chatbotController } from '../controllers/chatbotController.js';
 
 const router = Router();
 router.use(authenticate, requireRole('PATIENT'));
@@ -39,4 +40,5 @@ router.get('/consultations/:id', validate({ params: idParamsSchema }), asyncHand
 router.post('/symptom-assessments', symptomRateLimiter, validate({ body: createSymptomAssessmentSchema }), asyncHandler(symptomAssessmentController.create));
 router.get('/symptom-assessments', asyncHandler(symptomAssessmentController.list));
 router.get('/symptom-assessments/:id', validate({ params: idParamsSchema }), asyncHandler(symptomAssessmentController.get));
+router.post('/care-assistant/message', symptomRateLimiter, validate({ body: z.object({ message: z.string().trim().min(1).max(2000), hospitalId: uuid.optional(), date: z.iso.date().optional() }).strict() }), asyncHandler(chatbotController.message));
 export default router;

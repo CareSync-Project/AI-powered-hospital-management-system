@@ -81,6 +81,8 @@ Hospital configuration flows through `Department`, `DepartmentSchedule`, `Doctor
 
 Emergency screening precedes ordinary ranking. Linked assessments are visible only through patient ownership or an appointment-based nurse/doctor care relationship. This layer cannot update `TriageRecord.urgencyLevel` or any `Consultation` diagnosis/treatment field. All symptom API responses remain network-only under the PWA service-worker policy.
 
+Phase 7.1 adds a private FastAPI inference process behind Node. React never calls it directly. Node retains authentication, red flags, department resolution, persistence, auditing, and fallback. The Care Assistant uses deterministic intents and controlled service tools; it has no direct SQL facility.
+
 ## Deployment direction
 
 Deployment is Phase 8. The client and API will have separate environment configuration, while PostgreSQL remains private to the backend. Production CORS, proxy trust, observability, backups, migrations, rate limiting, and secret management must be configured and tested at deployment time rather than inferred from development defaults.

@@ -2,7 +2,9 @@
 
 ## Scope
 
-Phase 7 adds an explainable, deterministic, rule-based preliminary symptom assessment. It helps a patient decide which hospital department may be suitable and whether prompt review is advisable. It is not a diagnosis, does not replace a clinician, and does not use a trained machine-learning model.
+Phase 7.1 extends the explainable Phase 7 engine into a hybrid preliminary assessment: emergency safety rules run first, non-emergency inputs may use the measured `ml-logreg-v1.0` model, and every model failure uses the unchanged rule-based engine. It remains non-diagnostic and does not replace a clinician.
+
+Possible `assessmentMethod` values are `RULE_BASED` for emergency/test baseline behavior, `ML_HYBRID` for successful model-assisted results, and `RULE_BASED_FALLBACK` when model inference fails.
 
 ## Patient flow
 

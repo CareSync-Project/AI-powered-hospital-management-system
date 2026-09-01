@@ -177,3 +177,9 @@ The last two commands connect to PostgreSQL. See [database setup](docs/DATABASE_
 Phase 7 adds an authenticated, PostgreSQL-backed, rule-based preliminary symptom assessment. It normalizes common symptom language, screens urgent red flags first, ranks a small set of illustrative possibilities without fake probabilities, resolves recommendations against real hospital departments, integrates non-emergency results with booking, and exposes linked results to authorised nurses/doctors as advisory context. It does not train a machine-learning model, diagnose disease, set nurse triage, or write the doctor's diagnosis.
 
 See [AI symptom assessment](docs/AI_SYMPTOM_ASSESSMENT.md), [knowledge base](docs/SYMPTOM_KNOWLEDGE_BASE.md), and [AI safety](docs/AI_SAFETY.md).
+
+## Phase 7.1 status
+
+The symptom system is now hybrid: Node emergency rules, a measured scikit-learn classifier served by private FastAPI, and a rule-based failure fallback. The authenticated Care Assistant queries real hospital services and hands booking back to the existing confirmation workflow. Model metrics describe only the downloaded public dataset and are not clinical or Ghanaian validation.
+
+See [ML model](docs/ML_MODEL.md) and [Care Assistant](docs/CARE_ASSISTANT.md).
