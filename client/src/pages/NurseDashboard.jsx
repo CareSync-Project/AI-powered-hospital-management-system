@@ -14,9 +14,9 @@ import '../clinical.css';
 export default function NurseDashboard() {
   const { user, logout } = useAuth();
   const [items, setItems] = useState([]); const [selected, setSelected] = useState(null);
-  const [vitals, setVitals] = useState([]); const [filter, setFilter] = useState('ALL'); const [error, setError] = useState('');
-  const load = () => clinicalWorkflowService.nurseWorklist().then(r => setItems(r.data)).catch(e => setError(e.message));
-  useEffect(() => { load(); const timer = setInterval(load, 30000); return () => clearInterval(timer); }, []);
+  const [vitals, setVitals] = useState([]); const [filter, setFilter] = useState('ALL'); const [view, setView] = useState('TODAY'); const [error, setError] = useState('');
+  const load = () => (view === 'ASSIGNED' ? clinicalWorkflowService.nurseAssigned() : clinicalWorkflowService.nurseWorklist()).then(r => setItems(r.data)).catch(e => setError(e.message));
+  useEffect(() => { load(); const timer = setInterval(load, 30000); return () => clearInterval(timer); }, [view]);
   const open = async item => { setSelected(item); try { setVitals((await vitalService.appointment(item.id)).data); } catch (e) { setError(e.message); } };
   const action = async fn => { try { await fn(); const refreshed = (await clinicalWorkflowService.nurseWorklist()).data; setItems(refreshed); if (selected) setSelected(refreshed.find(x => x.id === selected.id) || null); } catch (e) { setError(e.message); } };
   const visible = items.filter(x => filter === 'ALL' || x.status === filter); const count = status => items.filter(x => x.status === status).length;
@@ -24,7 +24,7 @@ export default function NurseDashboard() {
     <header className="clinical-header"><div><small>Hospital clinical workflow</small><h1><Stethoscope/> Nurse/Triage Dashboard</h1><p>{user?.email}</p></div><div><button onClick={load}><RefreshCw/>Refresh</button><button onClick={logout}><LogOut/>Logout</button></div></header>
     <main className="clinical-layout"><aside>
       <div className="clinical-metrics"><span>Today<b>{items.length}</b></span><span>Checked in<b>{count('CHECKED_IN')}</b></span><span>Waiting<b>{count('WAITING')}</b></span><span>Emergency/High<b>{items.filter(x => ['EMERGENCY','HIGH'].includes(x.triageRecords?.[0]?.urgencyLevel)).length}</b></span></div>
-      <div className="clinical-filters">{['ALL','CONFIRMED','CHECKED_IN','TRIAGED','WAITING'].map(x => <button className={filter === x ? 'active' : ''} key={x} onClick={() => setFilter(x)}>{x.replace('_',' ')}</button>)}</div>
+      <div className="clinical-filters"><button className={view==='TODAY'?'active':''} onClick={()=>setView('TODAY')}>Today's Patients</button><button className={view==='ASSIGNED'?'active':''} onClick={()=>setView('ASSIGNED')}>My Assigned Patients</button>{['ALL','CONFIRMED','CHECKED_IN','TRIAGED','WAITING'].map(x => <button className={filter === x ? 'active' : ''} key={x} onClick={() => setFilter(x)}>{x.replace('_',' ')}</button>)}</div>
       <div className="worklist">{visible.map(x => <button key={x.id} className={selected?.id === x.id ? 'selected' : ''} onClick={() => open(x)}><div><strong>{x.patient.firstName} {x.patient.lastName}</strong><small>{x.appointmentNumber} · {x.department.name}</small><small>Dr. {x.doctor.firstName} {x.doctor.lastName}</small></div><div><UrgencyBadge level={x.triageRecords?.[0]?.urgencyLevel}/><span>{x.status.replaceAll('_',' ')}</span></div></button>)}</div>
     </aside><section className="clinical-panel">
       {error && <p className="clinical-error">{error}</p>}

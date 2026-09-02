@@ -1,5 +1,7 @@
 # Role-Based and Scoped Authorization
 
+CareSync is single-hospital. Final roles are `ADMIN`, `DOCTOR`, `NURSE`, and `PATIENT`. `ADMIN` is the highest role and cannot be publicly registered or created through ordinary staff management. No active system-owner or super-admin workflow exists.
+
 ## Phase 6 clinical permissions
 
 | Capability | Patient | Nurse | Doctor | Admin |

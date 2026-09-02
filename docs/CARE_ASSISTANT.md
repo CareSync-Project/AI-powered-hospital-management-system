@@ -1,5 +1,7 @@
 # Care Assistant
 
+The assistant automatically uses CareSync Hospital. Department schedules, doctors, and slots come from CareSync PostgreSQL data; booking always requires patient confirmation.
+
 ## Architecture
 
 The authenticated patient Care Assistant replaces the scripted chatbot as the primary assistant behavior:

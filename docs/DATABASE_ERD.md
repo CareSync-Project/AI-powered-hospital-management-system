@@ -1,5 +1,7 @@
 # Database ERD
 
+Phase 8.1 adds `NurseProfile ||--o{ NurseDepartment`, `Department ||--o{ NurseDepartment`, `NurseProfile ||--o{ NurseAppointmentAssignment`, and `Appointment ||--o{ NurseAppointmentAssignment`. CareSync uses one configured Hospital row.
+
 This Mermaid diagram reflects the implemented Phase 2 Prisma schema. Attribute details and constraints are in `DATABASE_DESIGN.md`.
 
 ```mermaid

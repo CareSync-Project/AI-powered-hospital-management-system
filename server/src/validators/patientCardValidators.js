@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { dateString, uuid } from './commonValidators.js';
 
 export const createPatientCardSchema = z.object({
-  hospitalId: uuid,
+  hospitalId: uuid.optional(),
   cardType: z.enum(['HOSPITAL_CARD', 'NHIS_CARD']),
   cardNumber: z.string().trim().min(4).max(80),
   expiresAt: dateString.optional().nullable(),

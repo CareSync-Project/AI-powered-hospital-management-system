@@ -111,23 +111,24 @@ enum NotificationType {
 }
 
 model User {
-  id             String          @id @default(uuid()) @db.Uuid
-  email          String          @unique
-  passwordHash   String
-  role           UserRole
-  active         Boolean         @default(true)
-  emailVerified  Boolean         @default(false)
-  lastLoginAt    DateTime?
-  adminProfile   AdminProfile?
-  patientProfile PatientProfile?
-  doctorProfile  DoctorProfile?
-  nurseProfile   NurseProfile?
-  notifications  Notification[]
-  auditLogs      AuditLog[]
-  recordedVitals VitalRecord[]   @relation("VitalRecordedBy")
-  authSessions   AuthSession[]
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
+  id                      String                       @id @default(uuid()) @db.Uuid
+  email                   String                       @unique
+  passwordHash            String
+  role                    UserRole
+  active                  Boolean                      @default(true)
+  emailVerified           Boolean                      @default(false)
+  lastLoginAt             DateTime?
+  adminProfile            AdminProfile?
+  patientProfile          PatientProfile?
+  doctorProfile           DoctorProfile?
+  nurseProfile            NurseProfile?
+  notifications           Notification[]
+  auditLogs               AuditLog[]
+  recordedVitals          VitalRecord[]                @relation("VitalRecordedBy")
+  authSessions            AuthSession[]
+  nurseAssignmentsCreated NurseAppointmentAssignment[] @relation("NurseAssignmentCreatedBy")
+  createdAt               DateTime                     @default(now())
+  updatedAt               DateTime                     @updatedAt
 
   @@index([role, active])
 }
@@ -286,6 +287,7 @@ model Department {
   hospital            Hospital             @relation(fields: [hospitalId], references: [id], onDelete: Restrict)
   schedules           DepartmentSchedule[]
   doctorDepartments   DoctorDepartment[]
+  nurseDepartments    NurseDepartment[]
   doctorSchedules     DoctorSchedule[]
   appointmentSlots    AppointmentSlot[]
   appointments        Appointment[]
@@ -382,23 +384,40 @@ model DoctorDepartment {
 }
 
 model NurseProfile {
-  id             String         @id @default(uuid()) @db.Uuid
-  userId         String         @unique @db.Uuid
-  hospitalId     String         @db.Uuid
-  employeeNumber String
-  firstName      String
-  lastName       String
-  phone          String
-  licenseNumber  String         @unique
-  active         Boolean        @default(true)
-  user           User           @relation(fields: [userId], references: [id], onDelete: Restrict)
-  hospital       Hospital       @relation(fields: [hospitalId], references: [id], onDelete: Restrict)
-  triageRecords  TriageRecord[]
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
+  id                     String                       @id @default(uuid()) @db.Uuid
+  userId                 String                       @unique @db.Uuid
+  hospitalId             String                       @db.Uuid
+  employeeNumber         String
+  firstName              String
+  lastName               String
+  phone                  String
+  licenseNumber          String                       @unique
+  active                 Boolean                      @default(true)
+  user                   User                         @relation(fields: [userId], references: [id], onDelete: Restrict)
+  hospital               Hospital                     @relation(fields: [hospitalId], references: [id], onDelete: Restrict)
+  triageRecords          TriageRecord[]
+  departments            NurseDepartment[]
+  appointmentAssignments NurseAppointmentAssignment[]
+  createdAt              DateTime                     @default(now())
+  updatedAt              DateTime                     @updatedAt
 
   @@unique([hospitalId, employeeNumber])
   @@index([hospitalId, active])
+}
+
+model NurseDepartment {
+  id           String       @id @default(uuid()) @db.Uuid
+  nurseId      String       @db.Uuid
+  departmentId String       @db.Uuid
+  active       Boolean      @default(true)
+  nurse        NurseProfile @relation(fields: [nurseId], references: [id], onDelete: Restrict)
+  department   Department   @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  @@unique([nurseId, departmentId])
+  @@index([departmentId, active])
+  @@index([nurseId, active])
 }
 
 model DoctorSchedule {
@@ -468,40 +487,41 @@ model AppointmentSlot {
 }
 
 model Appointment {
-  id                    String              @id @default(uuid()) @db.Uuid
-  appointmentNumber     String              @unique
-  patientId             String              @db.Uuid
-  hospitalId            String              @db.Uuid
-  departmentId          String              @db.Uuid
-  doctorId              String              @db.Uuid
-  patientCardId         String?             @db.Uuid
-  appointmentSlotId     String?             @db.Uuid
-  appointmentDate       DateTime            @db.Date
-  startTime             DateTime            @db.Time(0)
-  endTime               DateTime            @db.Time(0)
+  id                    String                       @id @default(uuid()) @db.Uuid
+  appointmentNumber     String                       @unique
+  patientId             String                       @db.Uuid
+  hospitalId            String                       @db.Uuid
+  departmentId          String                       @db.Uuid
+  doctorId              String                       @db.Uuid
+  patientCardId         String?                      @db.Uuid
+  appointmentSlotId     String?                      @db.Uuid
+  appointmentDate       DateTime                     @db.Date
+  startTime             DateTime                     @db.Time(0)
+  endTime               DateTime                     @db.Time(0)
   reasonForVisit        String
   symptomsSummary       String?
-  urgency               AppointmentUrgency  @default(ROUTINE)
+  urgency               AppointmentUrgency           @default(ROUTINE)
   bookingMethod         BookingMethod
-  status                AppointmentStatus   @default(PENDING)
+  status                AppointmentStatus            @default(PENDING)
   checkedInAt           DateTime?
   triagedAt             DateTime?
   consultationStartedAt DateTime?
   completedAt           DateTime?
   cancelledAt           DateTime?
   cancellationReason    String?
-  patient               PatientProfile      @relation(fields: [patientId], references: [id], onDelete: Restrict)
-  hospital              Hospital            @relation(fields: [hospitalId], references: [id], onDelete: Restrict)
-  department            Department          @relation(fields: [departmentId], references: [id], onDelete: Restrict)
-  doctor                DoctorProfile       @relation(fields: [doctorId], references: [id], onDelete: Restrict)
-  patientCard           PatientCard?        @relation(fields: [patientCardId], references: [id], onDelete: SetNull)
-  appointmentSlot       AppointmentSlot?    @relation(fields: [appointmentSlotId], references: [id], onDelete: SetNull)
+  patient               PatientProfile               @relation(fields: [patientId], references: [id], onDelete: Restrict)
+  hospital              Hospital                     @relation(fields: [hospitalId], references: [id], onDelete: Restrict)
+  department            Department                   @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+  doctor                DoctorProfile                @relation(fields: [doctorId], references: [id], onDelete: Restrict)
+  patientCard           PatientCard?                 @relation(fields: [patientCardId], references: [id], onDelete: SetNull)
+  appointmentSlot       AppointmentSlot?             @relation(fields: [appointmentSlotId], references: [id], onDelete: SetNull)
   vitalRecords          VitalRecord[]
   triageRecords         TriageRecord[]
   symptomAssessments    SymptomAssessment[]
   consultation          Consultation?
-  createdAt             DateTime            @default(now())
-  updatedAt             DateTime            @updatedAt
+  nurseAssignments      NurseAppointmentAssignment[]
+  createdAt             DateTime                     @default(now())
+  updatedAt             DateTime                     @updatedAt
 
   @@index([patientId, appointmentDate])
   @@index([doctorId, appointmentDate, status])
@@ -509,6 +529,23 @@ model Appointment {
   @@index([departmentId, appointmentDate])
   @@index([appointmentSlotId])
   @@index([status])
+}
+
+model NurseAppointmentAssignment {
+  id               String       @id @default(uuid()) @db.Uuid
+  nurseId          String       @db.Uuid
+  appointmentId    String       @db.Uuid
+  assignedByUserId String       @db.Uuid
+  active           Boolean      @default(true)
+  assignedAt       DateTime     @default(now())
+  unassignedAt     DateTime?
+  nurse            NurseProfile @relation(fields: [nurseId], references: [id], onDelete: Restrict)
+  appointment      Appointment  @relation(fields: [appointmentId], references: [id], onDelete: Restrict)
+  assignedBy       User         @relation("NurseAssignmentCreatedBy", fields: [assignedByUserId], references: [id], onDelete: Restrict)
+
+  @@unique([nurseId, appointmentId])
+  @@index([appointmentId, active])
+  @@index([nurseId, active])
 }
 
 model VitalRecord {

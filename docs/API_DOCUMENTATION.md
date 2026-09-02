@@ -1,5 +1,9 @@
 # API Documentation
 
+## Phase 8.1 single-hospital administration
+
+`GET /patient/departments` resolves CareSync Hospital automatically. Admin endpoints include `GET /admin/analytics`, `GET /admin/appointments`, `GET /admin/reports`, `GET /admin/nurses`, `PATCH /admin/nurses/:nurseId/departments`, `PATCH /admin/appointments/:appointmentId/nurse`, and `POST /admin/staff/bulk-import`. Nurse assigned visits use `GET /clinical/nurse/assigned-patients`. Doctor-owned reporting uses `GET /doctors/me/appointments/today` and `GET /doctors/me/reports`. No `/api/super-admin` route exists.
+
 ## Phase 6 clinical endpoints
 
 | Method/path | Role | Purpose |

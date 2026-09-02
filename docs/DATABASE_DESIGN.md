@@ -1,5 +1,7 @@
 # Database Design
 
+CareSync retains one active `Hospital` record for relational integrity. `NurseDepartment` is the normalized many-to-many department assignment with uniqueness and active state. `NurseAppointmentAssignment` links nurses to visits, records the assigning user and timestamps, and deliberately does not permanently attach a patient to a nurse.
+
 ## Principles
 
 The schema is normalized around global users/patients and explicit hospital relationships. UUID primary keys, foreign keys, compound uniqueness, selected indexes, enums, timestamps, and server-side validation protect integrity. PostgreSQL remains authoritative. No model stores a plaintext password, and ordinary user repository results exclude `passwordHash`.

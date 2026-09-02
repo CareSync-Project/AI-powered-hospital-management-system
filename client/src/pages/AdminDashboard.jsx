@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { LogOut, Activity, ShieldPlus, Users, Database, LayoutDashboard, Upload, CheckCircle, Plus, FileSpreadsheet, Clock, Mail } from 'lucide-react';
 import Phase4Management from '../components/admin/Phase4Management';
+import ReviewAdminPanel from '../components/admin/ReviewAdminPanel';
 
 const AdminDashboard = () => {
   const { user, logout } = useAuth();
@@ -142,6 +143,7 @@ const AdminDashboard = () => {
         ))}
         <button onClick={() => setActiveTab('overview')} className={`btn ${activeTab === 'overview' ? 'btn-primary' : ''}`} style={{ background: activeTab === 'overview' ? 'var(--color-primary)' : 'transparent', color: activeTab === 'overview' ? 'white' : 'var(--color-text-muted)' }}>AI Overview</button>
         <button onClick={() => setActiveTab('staff')} className={`btn ${activeTab === 'staff' ? 'btn-primary' : ''}`} style={{ background: activeTab === 'staff' ? 'var(--color-primary)' : 'transparent', color: activeTab === 'staff' ? 'white' : 'var(--color-text-muted)' }}>Medical Staff</button>
+        {[['directory','Staff Directory'],['analytics','Analytics'],['monitoring','Appointments'],['reports','Reports'],['bulk-secure','Secure Import']].map(([key,label])=><button key={key} onClick={()=>setActiveTab(key)} className={`btn ${activeTab===key?'btn-primary':''}`}>{label}</button>)}
         <button onClick={() => setActiveTab('import')} className={`btn ${activeTab === 'import' ? 'btn-primary' : ''}`} style={{ background: activeTab === 'import' ? 'var(--color-primary)' : 'transparent', color: activeTab === 'import' ? 'white' : 'var(--color-text-muted)' }}>Bulk Import</button>
         <button onClick={() => setActiveTab('requests')} className={`btn ${activeTab === 'requests' ? 'btn-primary' : ''}`} style={{ position: 'relative', background: activeTab === 'requests' ? 'var(--color-primary)' : 'transparent', color: activeTab === 'requests' ? 'white' : 'var(--color-text-muted)' }}>
           ID Requests
@@ -154,6 +156,11 @@ const AdminDashboard = () => {
       </div>
 
       {['hospital', 'departments', 'doctors', 'schedules'].includes(activeTab) && <Phase4Management section={activeTab} />}
+      {activeTab==='directory'&&<ReviewAdminPanel section="staff"/>}
+      {activeTab==='analytics'&&<ReviewAdminPanel section="analytics"/>}
+      {activeTab==='monitoring'&&<ReviewAdminPanel section="appointments"/>}
+      {activeTab==='reports'&&<ReviewAdminPanel section="reports"/>}
+      {activeTab==='bulk-secure'&&<ReviewAdminPanel section="bulk"/>}
 
       {activeTab === 'overview' && (
         <>

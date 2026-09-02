@@ -1,5 +1,7 @@
 # Project Architecture
 
+CareSync serves one configured hospital. Relational `hospitalId` fields remain for integrity, but patients do not select or switch hospitals and the application exposes no hospital-creation workflow.
+
 ## Phase 6 clinical layer
 
 Appointment workflow, vital assessment, triage, queue, and consultation services sit between role-protected Express controllers and Prisma. PostgreSQL is authoritative. Conditional updates and serializable transactions protect transitions. Nurse access is hospital-scoped, doctor access follows assignment, patient access follows ownership, and the PWA caches no clinical API response.

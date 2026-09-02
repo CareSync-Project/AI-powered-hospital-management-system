@@ -39,7 +39,7 @@ npx prisma studio
 
 ## Development seed
 
-The seed is idempotent, fictional, and blocked when `NODE_ENV=production`. It creates VoltaCare Teaching Hospital Demo, departments, schedules, fictional staff/patients/cards, and appointment slots.
+The seed is idempotent, fictional, and blocked when `NODE_ENV=production`. It creates CareSync Hospital, departments, schedules, fictional staff/patients/cards, and appointment slots.
 
 Development-only login identifiers use the `.invalid` domain. Their shared local seed password is:
 

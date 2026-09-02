@@ -1,4 +1,6 @@
-# AI-Powered Hospital Management System
+# CareSync
+
+CareSync is a single-hospital AI-Powered Hospital Management System. Final roles are `ADMIN`, `DOCTOR`, `NURSE`, and `PATIENT`. The configured fictional development facility is CareSync Hospital; the application does not create or switch hospitals.
 
 > Current status: Phases 1–6 are implemented. Phase 6 adds PostgreSQL-backed check-in, vitals, nurse triage, deterministic queues, doctor consultation, follow-up, and patient clinical summaries. AI symptom assessment remains Phase 7 work.
 

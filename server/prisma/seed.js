@@ -19,15 +19,16 @@ async function main() {
   const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 12);
   const hospital = await prisma.hospital.upsert({
     where: { hospitalCode: 'VCTH-DEMO' },
-    update: { active: true },
-    create: { name: 'VoltaCare Teaching Hospital Demo', hospitalCode: 'VCTH-DEMO', address: '1 Learning Avenue', city: 'Ho', region: 'Volta Region', country: 'Ghana', phone: '+233 30 000 0000', email: 'contact@voltacare-demo.invalid' },
+    update: { active: true, name: 'CareSync Hospital' },
+    create: { name: 'CareSync Hospital', hospitalCode: 'VCTH-DEMO', address: '1 Learning Avenue', city: 'Ho', region: 'Volta Region', country: 'Ghana', phone: '+233 30 000 0000', email: 'contact@voltacare-demo.invalid' },
   });
 
   const definitions = [
     ['General OPD', 'OPD', 'General outpatient services'], ['ENT', 'ENT', 'Ear, nose and throat clinic'],
     ['Maternity', 'MAT', 'Fictional development maternity clinic'], ['Pediatrics', 'PED', 'Child health clinic'],
     ['Cardiology', 'CARD', 'Heart and cardiovascular clinic'], ['Dental', 'DENT', 'Dental clinic'],
-    ['Ophthalmology', 'EYE', 'Eye clinic'],
+    ['Ophthalmology', 'EYE', 'Eye clinic'], ['Fertility Clinic', 'FERT', 'Fertility care clinic'],
+    ['Orthopedics', 'ORTH', 'Musculoskeletal clinic'], ['Physiotherapy', 'PHYSIO', 'Rehabilitation services'], ['Laboratory', 'LAB', 'Diagnostic laboratory services'],
   ];
   const departments = {};
   for (const [name, code, description] of definitions) {
@@ -53,7 +54,8 @@ async function main() {
   const patientUserOne = await upsertUser('patient.kofi@voltacare-demo.invalid', 'PATIENT', passwordHash);
   const patientUserTwo = await upsertUser('patient.esi@voltacare-demo.invalid', 'PATIENT', passwordHash);
   const admin = await prisma.adminProfile.upsert({ where: { userId: adminUser.id }, update: { active: true }, create: { userId: adminUser.id, hospitalId: hospital.id, employeeNumber: 'ADM-DEMO-001', firstName: 'Akosua', lastName: 'Mensah', phone: '+233 20 000 0001' } });
-  await prisma.nurseProfile.upsert({ where: { userId: nurseUser.id }, update: { active: true }, create: { userId: nurseUser.id, hospitalId: hospital.id, employeeNumber: 'NUR-DEMO-001', firstName: 'Ama', lastName: 'Dartey', phone: '+233 20 000 0002', licenseNumber: 'DEMO-NURSE-LIC-001' } });
+  const nurse = await prisma.nurseProfile.upsert({ where: { userId: nurseUser.id }, update: { active: true }, create: { userId: nurseUser.id, hospitalId: hospital.id, employeeNumber: 'NUR-DEMO-001', firstName: 'Ama', lastName: 'Dartey', phone: '+233 20 000 0002', licenseNumber: 'DEMO-NURSE-LIC-001' } });
+  await prisma.nurseDepartment.upsert({ where: { nurseId_departmentId: { nurseId: nurse.id, departmentId: departments.OPD.id } }, update: { active: true }, create: { nurseId: nurse.id, departmentId: departments.OPD.id } });
 
   const patientOne = await prisma.patientProfile.upsert({ where: { userId: patientUserOne.id }, update: { active: true }, create: { userId: patientUserOne.id, firstName: 'Kofi', lastName: 'Adjei', dateOfBirth: onDate('1994-06-15'), gender: 'MALE', phone: '+233 20 000 0101', address: '10 Fictional Street', city: 'Ho', region: 'Volta Region', emergencyContactName: 'Demo Contact One', emergencyContactPhone: '+233 20 000 0191' } });
   const patientTwo = await prisma.patientProfile.upsert({ where: { userId: patientUserTwo.id }, update: { active: true }, create: { userId: patientUserTwo.id, firstName: 'Esi', lastName: 'Aidoo', otherNames: 'Fictional', dateOfBirth: onDate('1988-11-03'), gender: 'FEMALE', phone: '+233 20 000 0102', address: '20 Sample Road', city: 'Ho', region: 'Volta Region', emergencyContactName: 'Demo Contact Two', emergencyContactPhone: '+233 20 000 0192' } });
@@ -92,7 +94,7 @@ async function main() {
     }
   }
 
-  console.log('Development seed completed with fictional VoltaCare Teaching Hospital Demo data.');
+  console.log('Development seed completed with fictional CareSync Hospital data.');
   console.log('The development-only password is documented in docs/DATABASE_SETUP.md.');
 }
 

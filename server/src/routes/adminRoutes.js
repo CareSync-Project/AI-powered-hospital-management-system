@@ -11,6 +11,8 @@ import { managementScheduleController } from '../controllers/managementScheduleC
 import { updateHospitalSchema } from '../validators/hospitalValidators.js';
 import { createDepartmentSchema } from '../validators/departmentValidators.js';
 import { departmentScheduleSchema } from '../validators/scheduleValidators.js';
+import { reviewCorrectionController } from '../controllers/reviewCorrectionController.js';
+import { bulkStaffSchema, nurseAppointmentSchema, nurseDepartmentSchema, reportQuerySchema } from '../validators/reviewCorrectionValidators.js';
 
 const router = Router();
 router.use(authenticate, requireRole('ADMIN'));
@@ -29,4 +31,11 @@ router.get('/doctors/:doctorId/exceptions', validate({ params: z.object({ doctor
 router.post('/doctors/:doctorId/exceptions', validate({ params: z.object({ doctorId: uuid }), body: scheduleExceptionSchema }), asyncHandler(managementScheduleController.createException));
 router.post('/doctors/:doctorId/generate-slots', validate({ params: z.object({ doctorId: uuid }), body: generateSlotsSchema }), asyncHandler(managementScheduleController.generate));
 router.post('/nurses', validate({ body: createNurseAccountSchema }), asyncHandler(adminController.createNurse));
+router.get('/nurses', asyncHandler(reviewCorrectionController.nurses));
+router.patch('/nurses/:nurseId/departments', validate({ params: z.object({ nurseId: uuid }), body: nurseDepartmentSchema }), asyncHandler(reviewCorrectionController.assignDepartment));
+router.patch('/appointments/:appointmentId/nurse', validate({ params: z.object({ appointmentId: uuid }), body: nurseAppointmentSchema }), asyncHandler(reviewCorrectionController.assignAppointment));
+router.get('/appointments', validate({ query: reportQuerySchema }), asyncHandler(reviewCorrectionController.appointments));
+router.get('/analytics', asyncHandler(reviewCorrectionController.analytics));
+router.get('/reports', validate({ query: reportQuerySchema }), asyncHandler(reviewCorrectionController.report));
+router.post('/staff/bulk-import', validate({ body: bulkStaffSchema }), asyncHandler(reviewCorrectionController.bulk));
 export default router;

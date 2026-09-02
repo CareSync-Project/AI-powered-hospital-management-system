@@ -16,6 +16,8 @@ const assignmentSchema = z.object({ hospitalId: uuid, departmentId: uuid, primar
 
 const router = Router();
 router.get('/me/schedule', authenticate, requireRole('DOCTOR'), asyncHandler(managementScheduleController.mySchedule));
+router.get('/me/appointments/today', authenticate, requireRole('DOCTOR'), asyncHandler(doctorController.today));
+router.get('/me/reports', authenticate, requireRole('DOCTOR'), asyncHandler(doctorController.reports));
 router.get('/:doctorId/available-slots', validate({ params: doctorParamsSchema, query: slotDateQuerySchema }), asyncHandler(managementScheduleController.doctorSlots));
 router.get('/:id', validate({ params: idParamsSchema }), asyncHandler(doctorController.get));
 router.post('/:id/affiliations', authenticate, requireRole('ADMIN'), validate({ params: idParamsSchema, body: affiliationSchema }), requireAdminHospitalFromBody, asyncHandler(doctorController.affiliate));
