@@ -348,14 +348,14 @@ export default function SymptomAssessmentPage({ onBook }) {
                         )}
 
                         {/* Possible Conditions Matched */}
-                        {assessmentData.possibleConditions && assessmentData.possibleConditions.length > 0 && (
+                        {Array.isArray(assessmentData.possibleConditions) && assessmentData.possibleConditions.length > 0 && (
                           <div>
                             <div style={{ fontSize: '0.82rem', fontWeight: '700', color: '#005a60', marginBottom: '0.5rem', textTransform: 'uppercase' }}>
                               Possible Health Causes to Discuss with Doctor:
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '0.75rem' }}>
-                              {assessmentData.possibleConditions.map((cond) => (
-                                <PossibleConditionCard key={cond.displayName} item={cond} />
+                              {assessmentData.possibleConditions.map((cond, idx) => (
+                                <PossibleConditionCard key={cond.displayName || cond.name || idx} item={cond} />
                               ))}
                             </div>
                           </div>
