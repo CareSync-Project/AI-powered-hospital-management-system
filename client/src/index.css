@@ -52,7 +52,7 @@ body {
 
 /* Typography Base */
 h1, h2, h3, h4, h5, h6 {
-  color: var(--color-text-main);
+  color: inherit;
   font-weight: 600;
   line-height: 1.1;
   letter-spacing: -0.02em;

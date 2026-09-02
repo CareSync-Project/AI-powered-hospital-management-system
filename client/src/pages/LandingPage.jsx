@@ -4,6 +4,16 @@ import { useAuth } from '../context/AuthContext';
 import { Stethoscope, User, ArrowRight, X, Eye, EyeOff, Activity, ShieldCheck, HeartPulse, MessageCircle, Send } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
+const formatFormError = (error) => {
+  if (!Array.isArray(error?.details) || error.details.length === 0) {
+    return error?.message || 'Something went wrong. Please try again.';
+  }
+
+  return error.details
+    .map(({ path, message }) => `${path ? `${path}: ` : ''}${message}`)
+    .join(' ');
+};
+
 const LandingPage = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [isLogin, setIsLogin] = useState(true);
@@ -42,14 +52,13 @@ const LandingPage = () => {
         const destinations = { PATIENT: '/patient-dashboard', DOCTOR: '/doctor-dashboard', NURSE: '/nurse-dashboard', ADMIN: '/admin-dashboard' };
         navigate(destinations[authenticatedUser.role] || '/access-denied');
       } else {
-        if (role !== 'patient') throw new Error('Staff accounts are created by a hospital administrator. Please sign in with your issued account.');
         await register({ ...formData, role: 'PATIENT' });
         const authenticatedUser = await login(formData.email, formData.password);
         navigate(authenticatedUser.role === 'PATIENT' ? '/patient-dashboard' : '/access-denied');
       }
       
     } catch (err) {
-      setError(err.message);
+      setError(formatFormError(err));
     }
   };
 
@@ -305,16 +314,17 @@ const LandingPage = () => {
                   <input type="email" name="email" required className="input-field" value={formData.email} onChange={handleInputChange} />
                 </div>
 
-                {!isLogin && <div><label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>Confirm password</label><input type={showPassword ? "text" : "password"} name="confirmPassword" required className="input-field" value={formData.confirmPassword} onChange={handleInputChange} /></div>}
+                {!isLogin && <div><label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>Confirm password</label><input type={showPassword ? "text" : "password"} name="confirmPassword" required minLength={10} className="input-field" value={formData.confirmPassword} onChange={handleInputChange} /></div>}
 
                 <div>
                   <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>Password</label>
                   <div style={{ position: 'relative' }}>
-                    <input type={showPassword ? "text" : "password"} name="password" required className="input-field" value={formData.password} onChange={handleInputChange} style={{ paddingRight: '2.5rem' }} />
+                    <input type={showPassword ? "text" : "password"} name="password" required minLength={10} className="input-field" value={formData.password} onChange={handleInputChange} style={{ paddingRight: '2.5rem' }} />
                     <button type="button" onClick={() => setShowPassword(!showPassword)} style={{ position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-muted)' }}>
                       {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
                   </div>
+                  {!isLogin && <small style={{ display: 'block', marginTop: '0.5rem', color: 'var(--color-text-muted)' }}>Use at least 10 characters, including uppercase, lowercase, and a number.</small>}
                 </div>
 
                 <button type="submit" className="btn hover-lift" style={{ width: '100%', marginTop: '1rem', padding: '1rem', backgroundColor: 'var(--color-secondary)', color: '#fff', border: 'none', fontSize: '1rem' }}>

@@ -23,7 +23,7 @@ router.patch('/notifications/read-all', authenticate, asyncHandler(async (req, r
   res.json({ success: true, data: await notificationService.markAllRead(req.auth.userId) });
 }));
 router.patch('/notifications/:id/read', authenticate, asyncHandler(async (req, res) => {
-  res.json({ success: true, data: await notificationService.markRead(req.params.id) });
+  res.json({ success: true, data: await notificationService.markRead(req.params.id, req.auth.userId) });
 }));
 
 export default router;

@@ -39,7 +39,10 @@ export const announcementController = {
     // Build role-specific hospital criteria to match Prisma schema relations
     const hospitalConditions = [];
     if (roles.includes('PATIENT')) {
-      hospitalConditions.push({ patientProfile: { hospitalRecords: { some: { hospitalId, status: 'ACTIVE' } } } });
+      // CareSync is a single-hospital application. Publicly registered patients
+      // may not have a PatientHospitalRecord until their first hospital workflow,
+      // but they must still receive hospital-wide patient announcements.
+      hospitalConditions.push({ role: 'PATIENT' });
     }
     if (roles.includes('DOCTOR')) {
       hospitalConditions.push({ doctorProfile: { hospitalAffiliations: { some: { hospitalId, active: true } } } });

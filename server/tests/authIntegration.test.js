@@ -24,6 +24,7 @@ describe.sequential('Phase 3 database-backed authentication', () => {
   afterAll(async () => {
     if (userId) {
       await prisma.auditLog.deleteMany({ where: { userId } });
+      await prisma.notification.deleteMany({ where: { userId } });
       await prisma.authSession.deleteMany({ where: { userId } });
       await prisma.patientProfile.deleteMany({ where: { userId } });
       await prisma.user.deleteMany({ where: { id: userId } });
@@ -68,6 +69,19 @@ describe.sequential('Phase 3 database-backed authentication', () => {
     await request(app).get('/api/auth/me').set('Authorization', 'Bearer invalid-token').expect(401);
     const response = await request(app).get('/api/auth/me').set('Authorization', `Bearer ${accessToken}`).expect(200);
     expect(response.body.data.user.id).toBe(userId);
+  });
+
+  test('authenticated users can mark their own notification as read', async () => {
+    const notification = await prisma.notification.create({
+      data: { userId, title: 'Test notification', message: 'Owner-scoped notification test', type: 'SYSTEM' },
+    });
+    const response = await request(app)
+      .patch(`/api/auth/notifications/${notification.id}/read`)
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({})
+      .expect(200);
+    expect(response.body.data.read).toBe(true);
+    expect(response.body.data.userId).toBe(userId);
   });
 
   test('refresh rotates the cookie and old refresh token cannot be reused', async () => {

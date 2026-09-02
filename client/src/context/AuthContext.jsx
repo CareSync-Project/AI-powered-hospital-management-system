@@ -21,6 +21,7 @@ export const AuthProvider = ({ children }) => {
     const hospitalContext = data.hospitalContext || [];
     const displayUser = {
       ...data.user,
+      profile,
       name: profile ? [profile.firstName, profile.lastName].filter(Boolean).join(' ') : data.user.email,
       hospitalId: hospitalContext[0]?.hospitalId || null,
     };

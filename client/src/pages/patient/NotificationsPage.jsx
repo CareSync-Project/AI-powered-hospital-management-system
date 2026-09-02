@@ -10,6 +10,7 @@ export default function NotificationsPage() {
       .then((r) => {
         const list = Array.isArray(r) ? r : (Array.isArray(r?.data) ? r.data : (r?.data?.data || []));
         setItems(list);
+        setError('');
       })
       .catch((e) => setError(e.message));
   };
@@ -37,7 +38,7 @@ export default function NotificationsPage() {
   const safeItems = Array.isArray(items) ? items : [];
 
   return (
-    <section className="patient-panel">
+    <section className="patient-panel patient-notifications">
       <div className="panel-heading">
         <h2>Notifications & Announcements</h2>
         {safeItems.some((x) => !x.read) && (

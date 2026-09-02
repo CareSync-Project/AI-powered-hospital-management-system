@@ -31,7 +31,7 @@ router.get('/me/appointments/today', authenticate, requireRole('DOCTOR'), asyncH
 router.get('/me/reports', authenticate, requireRole('DOCTOR'), asyncHandler(doctorController.reports));
 router.get('/me/notifications', authenticate, requireRole('DOCTOR'), asyncHandler(async (req, res) => { res.json({ success: true, data: await notificationService.list(req.auth.userId) }); }));
 router.patch('/me/notifications/read-all', authenticate, requireRole('DOCTOR'), asyncHandler(async (req, res) => { res.json({ success: true, data: await notificationService.markAllRead(req.auth.userId) }); }));
-router.patch('/me/notifications/:id/read', authenticate, requireRole('DOCTOR'), asyncHandler(async (req, res) => { res.json({ success: true, data: await notificationService.markRead(req.params.id) }); }));
+router.patch('/me/notifications/:id/read', authenticate, requireRole('DOCTOR'), asyncHandler(async (req, res) => { res.json({ success: true, data: await notificationService.markRead(req.params.id, req.auth.userId) }); }));
 router.get('/:doctorId/available-slots', validate({ params: doctorParamsSchema, query: slotDateQuerySchema }), asyncHandler(managementScheduleController.doctorSlots));
 router.get('/:id', validate({ params: idParamsSchema }), asyncHandler(doctorController.get));
 router.post('/:id/affiliations', authenticate, requireRole('ADMIN'), validate({ params: idParamsSchema, body: affiliationSchema }), requireAdminHospitalFromBody, asyncHandler(doctorController.affiliate));
