@@ -1,5 +1,7 @@
 const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace(/\/$/, '');
 let accessToken = null;
+let refreshPromise = null;
+let authFailureHandler = () => {};
 
 export class ApiError extends Error {
   constructor(message, status, details) {
@@ -13,8 +15,22 @@ export class ApiError extends Error {
 export const setAccessToken = (token) => {
   accessToken = token || null;
 };
+export const setAuthFailureHandler = (handler) => { authFailureHandler = handler || (() => {}); };
 
-export async function apiRequest(path, options = {}) {
+async function refreshAccessToken() {
+  if (!refreshPromise) {
+    refreshPromise = fetch(`${API_URL}/auth/refresh`, { method: 'POST', credentials: 'include' })
+      .then(async (response) => {
+        const payload = await response.json().catch(() => null);
+        if (!response.ok || !payload?.data?.accessToken) throw new ApiError(payload?.message || 'Session expired', response.status);
+        setAccessToken(payload.data.accessToken);
+        return payload;
+      }).finally(() => { refreshPromise = null; });
+  }
+  return refreshPromise;
+}
+
+export async function apiRequest(path, options = {}, hasRetried = false) {
   const headers = new Headers(options.headers);
 
   if (options.body && !(options.body instanceof FormData) && !headers.has('Content-Type')) {
@@ -28,12 +44,23 @@ export async function apiRequest(path, options = {}) {
   const response = await fetch(`${API_URL}${path.startsWith('/') ? path : `/${path}`}`, {
     ...options,
     headers,
+    credentials: 'include',
   });
 
   const contentType = response.headers.get('content-type') || '';
   const payload = contentType.includes('application/json') ? await response.json() : null;
 
   if (!response.ok) {
+    const isAuthEndpoint = path.startsWith('/auth/login') || path.startsWith('/auth/register') || path.startsWith('/auth/refresh');
+    if (response.status === 401 && !hasRetried && !isAuthEndpoint) {
+      try {
+        await refreshAccessToken();
+        return apiRequest(path, options, true);
+      } catch {
+        setAccessToken(null);
+        authFailureHandler();
+      }
+    }
     throw new ApiError(
       payload?.message || `Request failed with status ${response.status}`,
       response.status,
@@ -43,6 +70,8 @@ export async function apiRequest(path, options = {}) {
 
   return payload;
 }
+
+export { refreshAccessToken };
 
 export const api = {
   get: (path, options = {}) => apiRequest(path, { ...options, method: 'GET' }),

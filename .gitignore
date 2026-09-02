@@ -11,6 +11,12 @@ dist/
 dist-ssr/
 build/
 coverage/
+ai-service/data/*.csv
+ai-service/data/*.zip
+ai-service/.venv/
+ai-service/__pycache__/
+ai-service/**/__pycache__/
+ai-service/.pytest_cache/
 
 # Logs
 logs/

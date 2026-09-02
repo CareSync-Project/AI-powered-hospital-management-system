@@ -1,0 +1,1 @@
+export default function EmergencyAlert({result}){return result?.redFlagDetected?<div className="symptom-emergency" role="alert"><h3>Urgent medical attention may be required</h3><p>{result.recommendedAction}</p><strong>This tool cannot rule out a medical emergency.</strong></div>:null}

@@ -1,0 +1,2 @@
+import api from './api';
+export const departmentService = { listManaged: () => api.get('/admin/departments'), create: (data) => api.post('/admin/departments', data), update: (id, data) => api.patch(`/departments/${id}`, data), createSchedule: (id, data) => api.post(`/admin/departments/${id}/schedules`, data), updateSchedule: (id, data) => api.patch(`/department-schedules/${id}`, data), publicSchedules: (id) => api.get(`/departments/${id}/schedules`) };

@@ -1,188 +1,38 @@
-import React, { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { Activity, CalendarDays, LogOut, RefreshCw, Stethoscope } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { LogOut, Calendar, Clock, CheckCircle, Users, Activity, ShieldPlus, Play, Square, FileText } from 'lucide-react';
+import { clinicalWorkflowService } from '../services/clinicalWorkflowService';
+import { consultationService } from '../services/consultationService';
+import { doctorService } from '../services/doctorService';
+import VitalSummary from '../components/nurse/VitalSummary';
+import UrgencyBadge from '../components/nurse/UrgencyBadge';
+import ClinicalAssessmentSummary from '../components/symptoms/ClinicalAssessmentSummary';
+import '../clinical.css';
 
-const DoctorDashboard = () => {
-  const { user, logout } = useAuth();
-  const [appointments, setAppointments] = useState([]);
-  const [queueLength, setQueueLength] = useState(0);
+const blank = { chiefComplaint: '', clinicalObservations: '', consultationNotes: '', diagnosis: '', treatmentPlan: '', followUpRequired: false, followUpDate: '' };
+export default function DoctorDashboard() {
+  const { profile, logout } = useAuth();
+  const [queue, setQueue] = useState([]), [selected, setSelected] = useState(null), [form, setForm] = useState(blank), [tab, setTab] = useState('queue'), [schedule, setSchedule] = useState({ schedules: [], exceptions: [] }), [daily,setDaily]=useState({items:[],counts:{}}),[reports,setReports]=useState(null), [error, setError] = useState('');
+  const load = () => clinicalWorkflowService.doctorQueue().then(r => setQueue(r.data)).catch(e => setError(e.message));
+  useEffect(() => { load(); doctorService.mySchedule().then(r => setSchedule(r.data)).catch(e => setError(e.message));doctorService.today().then(r=>setDaily(r.data)).catch(e=>setError(e.message));doctorService.reports().then(r=>setReports(r.data)).catch(e=>setError(e.message)); const timer = setInterval(load, 30000); return () => clearInterval(timer); }, []);
+  const open = async item => { try { const context = (await consultationService.context(item.id)).data; setSelected(context); setForm(context.consultation ? { ...blank, ...context.consultation, followUpDate: context.consultation.followUpDate?.slice(0, 10) || '' } : { ...blank, chiefComplaint: context.triageRecords?.[0]?.chiefComplaint || context.reasonForVisit }); } catch (e) { setError(e.message); } };
+  const start = async () => { try { await consultationService.start(selected.id); await open(selected); await load(); } catch (e) { setError(e.message); } };
+  const payload = () => ({ ...form, followUpDate: form.followUpDate || null });
+  const save = async () => { try { await consultationService.save(selected.id, payload()); setError('Draft saved successfully.'); } catch (e) { setError(e.message); } };
+  const complete = async () => { if (!confirm('Complete this consultation? The appointment will be marked completed.')) return; try { await consultationService.complete(selected.id, payload()); setSelected(null); setForm(blank); await load(); } catch (e) { setError(e.message); } };
+  return <div className="clinical-app">
+    <header className="clinical-header"><div><small>PostgreSQL-backed clinical portal</small><h1><Stethoscope /> Doctor Dashboard</h1><p>Dr. {profile?.firstName} {profile?.lastName}</p></div><div><button onClick={load}><RefreshCw />Refresh</button><button onClick={logout}><LogOut />Logout</button></div></header>
+    <div className="clinical-filters" style={{ maxWidth: 1400, margin: '1rem auto' }}><button className={tab === 'queue' ? 'active' : ''} onClick={() => setTab('queue')}>My Queue</button><button className={tab==='today'?'active':''} onClick={()=>setTab('today')}>Today's Appointments</button><button className={tab==='reports'?'active':''} onClick={()=>setTab('reports')}>Reports</button><button className={tab === 'schedule' ? 'active' : ''} onClick={() => setTab('schedule')}>My Schedule</button></div>
+    {tab==='today'&&<main className="clinical-panel" style={{maxWidth:1400,margin:'auto'}}><h2>Today's Appointments</h2><div className="clinical-metrics">{Object.entries(daily.counts).map(([key,value])=><span key={key}>{key.replace(/([A-Z])/g,' $1')}<b>{value}</b></span>)}</div>{daily.items.map(item=><article className="queue-ready" key={item.id}><b>{item.appointmentNumber}</b> · {item.patient.firstName} {item.patient.lastName} · {item.department.name} · {item.status.replaceAll('_',' ')}</article>)}</main>}
+    {tab==='reports'&&<main className="clinical-panel" style={{maxWidth:1400,margin:'auto'}}><h2>My Reports</h2>{reports&&<><div className="clinical-metrics"><span>Completed today<b>{reports.completedToday}</b></span><span>This week<b>{reports.completedWeek}</b></span><span>This month<b>{reports.completedMonth}</b></span><span>Follow-ups<b>{reports.followUpCount}</b></span></div><h3>Status breakdown</h3>{reports.statuses.map(item=><p key={item.status}>{item.status}: {item.count}</p>)}</>}</main>}
+    {tab === 'schedule' ? <main className="clinical-panel" style={{ maxWidth: 1400, margin: 'auto' }}><h2><CalendarDays /> My schedule</h2>{schedule.schedules.map(item => <article className="queue-ready" key={item.id}><strong>{item.dayOfWeek}</strong> · {new Date(item.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' })}–{new Date(item.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' })} · {item.department?.name}</article>)}{!schedule.schedules.length && <p>No schedule configured.</p>}</main> : <main className="clinical-layout">
+      <aside><div className="clinical-metrics"><span>Waiting<b>{queue.filter(x => x.status === 'WAITING').length}</b></span><span>In consultation<b>{queue.filter(x => x.status === 'IN_CONSULTATION').length}</b></span></div><div className="worklist">{queue.map(item => <button key={item.id} onClick={() => open(item)} className={selected?.id === item.id ? 'selected' : ''}><div><strong>{item.patient.firstName} {item.patient.lastName}</strong><small>{item.appointmentNumber} · {item.department.name}</small><small>{item.status.replaceAll('_', ' ')}</small></div><UrgencyBadge level={item.triageRecords?.[0]?.urgencyLevel} /></button>)}</div></aside>
+      <section className="clinical-panel">{error && <p className={error.includes('success') ? 'queue-ready' : 'clinical-error'}>{error}</p>}{!selected ? <div className="clinical-empty"><Activity /><h2>Select an assigned patient</h2><p>Only your waiting and active consultations appear here.</p></div> : <><div className="patient-clinical-heading"><div><h2>{selected.patient.firstName} {selected.patient.lastName}</h2><p>{selected.appointmentNumber} · {selected.department.name}</p><p>Reason: {selected.reasonForVisit}</p></div><UrgencyBadge level={selected.triageRecords?.[0]?.urgencyLevel} /></div><ClinicalAssessmentSummary assessment={selected.symptomAssessments?.[0]} /><h3>Triage and latest verified vitals</h3><p>{selected.triageRecords?.[0]?.chiefComplaint || 'No triage summary'}</p><VitalSummary vital={selected.vitalRecords?.find(x => x.verificationStatus === 'VERIFIED')} />{selected.status === 'WAITING' ? <button onClick={start}>Start consultation</button> : <ConsultationForm form={form} setForm={setForm} save={save} complete={complete} />}</>}</section>
+    </main>}
+  </div>;
+}
 
-  const [activeConsultation, setActiveConsultation] = useState(null);
-  const [consultationStartTime, setConsultationStartTime] = useState(null);
-
-  // Load existing data
-  useEffect(() => {
-    loadAppointments();
-  }, [user.id]);
-
-  const loadAppointments = () => {
-    const loadedAppointments = JSON.parse(localStorage.getItem('hospital_appointments') || '[]');
-    // Only show scheduled appointments for this doctor
-    const myAppointments = loadedAppointments.filter(app => app.doctorId === user.id && app.status === 'scheduled');
-    setAppointments(myAppointments);
-    setQueueLength(myAppointments.length);
-  };
-
-  const handleStartConsultation = (appId) => {
-    setActiveConsultation(appId);
-    setConsultationStartTime(Date.now());
-  };
-
-  const handleCompleteAppointment = (appId) => {
-    const notes = window.prompt("Enter consultation notes/prescription for this patient:");
-    
-    // Calculate duration in minutes (minimum 1 minute, or if they tested it really fast, let's just use the actual math)
-    let durationMins = 0;
-    if (activeConsultation === appId && consultationStartTime) {
-      durationMins = Math.max(1, Math.round((Date.now() - consultationStartTime) / 60000));
-    } else {
-      // Fallback if they clicked complete without starting timer
-      durationMins = 15; 
-    }
-
-    const loadedAppointments = JSON.parse(localStorage.getItem('hospital_appointments') || '[]');
-    const updatedApps = loadedAppointments.map(app => {
-      if (app.id === appId) {
-        return { 
-          ...app, 
-          status: 'completed', 
-          consultationNotes: notes || '',
-          consultationDuration: durationMins
-        };
-      }
-      return app;
-    });
-    localStorage.setItem('hospital_appointments', JSON.stringify(updatedApps));
-    
-    setActiveConsultation(null);
-    setConsultationStartTime(null);
-    loadAppointments(); // Refresh
-  };
-
-  return (
-    <div className="container" style={{ paddingTop: '2rem', paddingBottom: '4rem' }}>
-      {/* Top Header */}
-      <header style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', gap: '1rem' }}>
-        <h2 style={{ fontSize: '1.75rem', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <ShieldPlus color="var(--color-primary)" size={28} />
-          Doctor Portal
-        </h2>
-        <div className="header-actions" style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: '999px', fontSize: '0.875rem' }}>
-            <Users size={16} color="var(--color-primary)" />
-            Dr. {user?.name} ({user?.specialization})
-          </div>
-          <button className="btn btn-outline hover-lift" onClick={logout} style={{ display: 'flex', gap: '0.5rem' }}>
-            <LogOut size={16} /> Logout
-          </button>
-        </div>
-      </header>
-
-      {/* Feature Banner Image */}
-      <div style={{ width: '100%', height: '140px', borderRadius: '16px', backgroundImage: 'url(/dashboard_banner_medical.jpg)', backgroundSize: 'cover', backgroundPosition: 'center', marginBottom: '2rem', position: 'relative', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to right, rgba(9, 9, 11, 0.9), rgba(9, 9, 11, 0.4))' }}></div>
-        <div style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', left: '3rem' }}>
-           <h3 style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>Welcome, Dr. {user?.name}</h3>
-           <p style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem' }}>Manage your active queue and patient flow.</p>
-        </div>
-      </div>
-
-      <div className="grid-2">
-        {/* Left Column: Metrics */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          <div className="glass-panel" style={{ padding: '2rem', textAlign: 'center' }}>
-            <div style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)', marginBottom: '0.5rem' }}>Current Queue Load</div>
-            <div style={{ fontSize: '3.5rem', fontWeight: '700', color: 'var(--color-text-main)', lineHeight: '1' }}>
-              {queueLength}
-            </div>
-            <div style={{ fontSize: '0.875rem', color: 'var(--color-warning)', marginTop: '0.5rem' }}>
-              Patients Waiting
-            </div>
-          </div>
-          
-          <div className="glass-panel" style={{ padding: '2rem', textAlign: 'center' }}>
-            <div style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)', marginBottom: '0.5rem' }}>Est. Queue Clear Time</div>
-            <div style={{ fontSize: '3.5rem', fontWeight: '700', color: 'var(--color-text-main)', lineHeight: '1' }}>
-              {queueLength * 15}
-            </div>
-            <div style={{ fontSize: '0.875rem', color: 'var(--color-primary)', marginTop: '0.5rem' }}>
-              Minutes
-            </div>
-          </div>
-        </div>
-
-        {/* Right Column: Queue */}
-        <div className="glass-panel" style={{ padding: '2rem' }}>
-          <h3 style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Activity size={20} color="var(--color-primary)" /> Active Patient Queue
-          </h3>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            {appointments.length === 0 ? (
-              <div style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem', textAlign: 'center', padding: '4rem 0', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px dashed var(--glass-border)' }}>
-                Your queue is completely empty. Great job!
-              </div>
-            ) : (
-              appointments.map((app, index) => (
-                <div key={app.id} style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', padding: '1.25rem', background: index === 0 ? 'rgba(59, 130, 246, 0.05)' : 'rgba(255,255,255,0.03)', border: index === 0 ? '1px solid rgba(59, 130, 246, 0.3)' : '1px solid var(--glass-border)', borderRadius: '12px', position: 'relative', overflow: 'hidden' }}>
-                  {/* Status Indicator Line */}
-                  <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '4px', background: index === 0 ? 'var(--color-primary)' : 'var(--color-text-muted)' }}></div>
-                  
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
-                      <strong style={{ fontSize: '1.125rem' }}>Patient: {app.patientName}</strong>
-                      <div style={{ display: 'flex', gap: '0.5rem' }}>
-                        {app.urgency === 'Emergency' && (
-                           <span style={{ fontSize: '0.75rem', color: 'var(--color-error)', background: 'rgba(239, 68, 68, 0.1)', padding: '0.25rem 0.5rem', borderRadius: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                             Emergency
-                           </span>
-                        )}
-                        {index === 0 && activeConsultation !== app.id && (
-                          <span style={{ fontSize: '0.75rem', color: 'var(--color-primary)', background: 'rgba(59, 130, 246, 0.1)', padding: '0.25rem 0.5rem', borderRadius: '4px', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                            <Activity size={12} className="spin" /> Next Up
-                          </span>
-                        )}
-                        {activeConsultation === app.id && (
-                          <span style={{ fontSize: '0.75rem', color: 'var(--color-warning)', background: 'rgba(245, 158, 11, 0.1)', padding: '0.25rem 0.5rem', borderRadius: '4px', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                            <Activity size={12} className="spin" /> In Consultation
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    
-                    <div style={{ display: 'flex', gap: '1.5rem', fontSize: '0.875rem', color: 'var(--color-text-muted)', marginTop: '0.5rem' }}>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}><Calendar size={14} /> {app.date}</span>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}><Clock size={14} /> {app.time}</span>
-                    </div>
-                  </div>
-
-                  <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    {activeConsultation !== app.id ? (
-                      <button 
-                        className="btn btn-outline hover-lift" 
-                        onClick={() => handleStartConsultation(app.id)}
-                        style={{ padding: '0.5rem 1rem', fontSize: '0.875rem' }}
-                      >
-                        <Play size={16} style={{ marginRight: '0.5rem', display: 'inline' }} /> Start
-                      </button>
-                    ) : (
-                      <button 
-                        className="btn btn-primary hover-lift" 
-                        onClick={() => handleCompleteAppointment(app.id)}
-                        style={{ padding: '0.5rem 1rem', fontSize: '0.875rem', background: 'var(--color-success)', borderColor: 'var(--color-success)' }}
-                      >
-                        <Square size={16} style={{ marginRight: '0.5rem', display: 'inline' }} /> End & Save
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-export default DoctorDashboard;
+function ConsultationForm({ form, setForm, save, complete }) {
+  const fields = [['chiefComplaint', 'Chief complaint'], ['clinicalObservations', 'Clinical observations'], ['consultationNotes', 'Consultation notes'], ['diagnosis', 'Clinician-entered diagnosis'], ['treatmentPlan', 'Treatment plan']];
+  return <form className="clinical-form consultation-grid" onSubmit={e => e.preventDefault()}>{fields.map(([key, label]) => <label className={['consultationNotes', 'treatmentPlan'].includes(key) ? 'wide' : ''} key={key}>{label}<textarea required={['chiefComplaint', 'diagnosis', 'treatmentPlan'].includes(key)} value={form[key] || ''} onChange={e => setForm({ ...form, [key]: e.target.value })} /></label>)}<label><input type="checkbox" checked={form.followUpRequired} onChange={e => setForm({ ...form, followUpRequired: e.target.checked })} /> Follow-up recommended</label>{form.followUpRequired && <label>Follow-up date<input type="date" required value={form.followUpDate || ''} onChange={e => setForm({ ...form, followUpDate: e.target.value })} /></label>}<div className="wide"><button type="button" onClick={save}>Save draft</button> <button type="button" onClick={complete}>Complete consultation</button></div></form>;
+}

@@ -1,0 +1,61 @@
+{
+  "model_version": "ml-logreg-v1.0",
+  "selected_model": "logistic_regression",
+  "random_seed": 42,
+  "split": {
+    "train": 919,
+    "validation": 197,
+    "test": 198
+  },
+  "features": [
+    "fever",
+    "headache",
+    "cough",
+    "runny_nose",
+    "body_aches",
+    "weakness",
+    "vomiting",
+    "diarrhoea",
+    "abdominal_pain",
+    "difficulty_breathing",
+    "chest_pain",
+    "dizziness",
+    "rash",
+    "itching",
+    "sore_throat",
+    "ear_pain",
+    "eye_pain",
+    "toothache",
+    "back_pain",
+    "joint_pain",
+    "painful_urination",
+    "nausea",
+    "allergic_reaction"
+  ],
+  "classes": [
+    "allergy_related_condition",
+    "asthma_like_respiratory_concern",
+    "ent_concern",
+    "eye_related_condition",
+    "gastrointestinal_illness",
+    "urinary_tract_concern",
+    "viral_respiratory_illness"
+  ],
+  "dataset": {
+    "original_rows": 96088,
+    "selected_rows_before_projection_deduplication": 19092,
+    "rows_used": 1314,
+    "missing_values_in_used_features": 0,
+    "projected_duplicates_removed": 17778
+  },
+  "class_distribution": {
+    "allergy_related_condition": 139,
+    "asthma_like_respiratory_concern": 138,
+    "ent_concern": 576,
+    "eye_related_condition": 32,
+    "gastrointestinal_illness": 64,
+    "urinary_tract_concern": 63,
+    "viral_respiratory_illness": 302
+  },
+  "low_confidence_threshold": 0.45
+}
