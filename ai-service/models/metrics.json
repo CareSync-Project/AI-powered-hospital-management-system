@@ -1,0 +1,528 @@
+{
+  "candidate_validation_metrics": {
+    "logistic_regression": {
+      "accuracy": 0.7208121827411168,
+      "macro_precision": 0.7055567038325659,
+      "macro_recall": 0.8135052470600643,
+      "macro_f1": 0.727732508764649,
+      "weighted_precision": 0.787914047366174,
+      "weighted_recall": 0.7208121827411168,
+      "weighted_f1": 0.7317529591792789,
+      "confusion_matrix": [
+        [
+          17,
+          0,
+          0,
+          1,
+          0,
+          0,
+          3
+        ],
+        [
+          1,
+          18,
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        [
+          5,
+          5,
+          57,
+          2,
+          0,
+          0,
+          17
+        ],
+        [
+          0,
+          0,
+          0,
+          5,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          1,
+          8,
+          1,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          1,
+          9,
+          0
+        ],
+        [
+          3,
+          10,
+          1,
+          3,
+          0,
+          0,
+          28
+        ]
+      ],
+      "classification_report": {
+        "allergy_related_condition": {
+          "precision": 0.6538461538461539,
+          "recall": 0.8095238095238095,
+          "f1-score": 0.723404255319149,
+          "support": 21.0
+        },
+        "asthma_like_respiratory_concern": {
+          "precision": 0.5454545454545454,
+          "recall": 0.9,
+          "f1-score": 0.6792452830188679,
+          "support": 20.0
+        },
+        "ent_concern": {
+          "precision": 0.9827586206896551,
+          "recall": 0.6627906976744186,
+          "f1-score": 0.7916666666666666,
+          "support": 86.0
+        },
+        "eye_related_condition": {
+          "precision": 0.38461538461538464,
+          "recall": 1.0,
+          "f1-score": 0.5555555555555556,
+          "support": 5.0
+        },
+        "gastrointestinal_illness": {
+          "precision": 0.8888888888888888,
+          "recall": 0.8,
+          "f1-score": 0.8421052631578947,
+          "support": 10.0
+        },
+        "urinary_tract_concern": {
+          "precision": 0.9,
+          "recall": 0.9,
+          "f1-score": 0.9,
+          "support": 10.0
+        },
+        "viral_respiratory_illness": {
+          "precision": 0.5833333333333334,
+          "recall": 0.6222222222222222,
+          "f1-score": 0.6021505376344086,
+          "support": 45.0
+        },
+        "accuracy": 0.7208121827411168,
+        "macro avg": {
+          "precision": 0.7055567038325659,
+          "recall": 0.8135052470600643,
+          "f1-score": 0.727732508764649,
+          "support": 197.0
+        },
+        "weighted avg": {
+          "precision": 0.787914047366174,
+          "recall": 0.7208121827411168,
+          "f1-score": 0.7317529591792789,
+          "support": 197.0
+        }
+      }
+    },
+    "random_forest": {
+      "accuracy": 0.5989847715736041,
+      "macro_precision": 0.5685657596371881,
+      "macro_recall": 0.6019010705057217,
+      "macro_f1": 0.5801320907274699,
+      "weighted_precision": 0.6264553621787124,
+      "weighted_recall": 0.5989847715736041,
+      "weighted_f1": 0.6083517087505698,
+      "confusion_matrix": [
+        [
+          14,
+          0,
+          1,
+          1,
+          0,
+          0,
+          5
+        ],
+        [
+          3,
+          9,
+          1,
+          1,
+          0,
+          0,
+          6
+        ],
+        [
+          6,
+          3,
+          58,
+          1,
+          0,
+          0,
+          18
+        ],
+        [
+          2,
+          0,
+          0,
+          2,
+          0,
+          1,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          1,
+          8,
+          1,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          2,
+          8,
+          0
+        ],
+        [
+          3,
+          9,
+          12,
+          2,
+          0,
+          0,
+          19
+        ]
+      ],
+      "classification_report": {
+        "allergy_related_condition": {
+          "precision": 0.5,
+          "recall": 0.6666666666666666,
+          "f1-score": 0.5714285714285714,
+          "support": 21.0
+        },
+        "asthma_like_respiratory_concern": {
+          "precision": 0.42857142857142855,
+          "recall": 0.45,
+          "f1-score": 0.43902439024390244,
+          "support": 20.0
+        },
+        "ent_concern": {
+          "precision": 0.8055555555555556,
+          "recall": 0.6744186046511628,
+          "f1-score": 0.7341772151898734,
+          "support": 86.0
+        },
+        "eye_related_condition": {
+          "precision": 0.25,
+          "recall": 0.4,
+          "f1-score": 0.3076923076923077,
+          "support": 5.0
+        },
+        "gastrointestinal_illness": {
+          "precision": 0.8,
+          "recall": 0.8,
+          "f1-score": 0.8,
+          "support": 10.0
+        },
+        "urinary_tract_concern": {
+          "precision": 0.8,
+          "recall": 0.8,
+          "f1-score": 0.8,
+          "support": 10.0
+        },
+        "viral_respiratory_illness": {
+          "precision": 0.3958333333333333,
+          "recall": 0.4222222222222222,
+          "f1-score": 0.40860215053763443,
+          "support": 45.0
+        },
+        "accuracy": 0.5989847715736041,
+        "macro avg": {
+          "precision": 0.5685657596371881,
+          "recall": 0.6019010705057217,
+          "f1-score": 0.5801320907274699,
+          "support": 197.0
+        },
+        "weighted avg": {
+          "precision": 0.6264553621787124,
+          "recall": 0.5989847715736041,
+          "f1-score": 0.6083517087505698,
+          "support": 197.0
+        }
+      }
+    },
+    "gradient_boosting": {
+      "accuracy": 0.6598984771573604,
+      "macro_precision": 0.6059044808794357,
+      "macro_recall": 0.6654326847017876,
+      "macro_f1": 0.6225066509110893,
+      "weighted_precision": 0.7095024440906929,
+      "weighted_recall": 0.6598984771573604,
+      "weighted_f1": 0.6711384105419493,
+      "confusion_matrix": [
+        [
+          16,
+          0,
+          0,
+          1,
+          0,
+          0,
+          4
+        ],
+        [
+          1,
+          16,
+          0,
+          1,
+          0,
+          0,
+          2
+        ],
+        [
+          6,
+          5,
+          57,
+          2,
+          0,
+          0,
+          16
+        ],
+        [
+          1,
+          1,
+          0,
+          2,
+          0,
+          1,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          1,
+          7,
+          2,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          2,
+          8,
+          0
+        ],
+        [
+          4,
+          9,
+          6,
+          2,
+          0,
+          0,
+          24
+        ]
+      ],
+      "classification_report": {
+        "allergy_related_condition": {
+          "precision": 0.5714285714285714,
+          "recall": 0.7619047619047619,
+          "f1-score": 0.6530612244897959,
+          "support": 21.0
+        },
+        "asthma_like_respiratory_concern": {
+          "precision": 0.5161290322580645,
+          "recall": 0.8,
+          "f1-score": 0.6274509803921569,
+          "support": 20.0
+        },
+        "ent_concern": {
+          "precision": 0.9047619047619048,
+          "recall": 0.6627906976744186,
+          "f1-score": 0.7651006711409396,
+          "support": 86.0
+        },
+        "eye_related_condition": {
+          "precision": 0.2222222222222222,
+          "recall": 0.4,
+          "f1-score": 0.2857142857142857,
+          "support": 5.0
+        },
+        "gastrointestinal_illness": {
+          "precision": 0.7777777777777778,
+          "recall": 0.7,
+          "f1-score": 0.7368421052631579,
+          "support": 10.0
+        },
+        "urinary_tract_concern": {
+          "precision": 0.7272727272727273,
+          "recall": 0.8,
+          "f1-score": 0.7619047619047619,
+          "support": 10.0
+        },
+        "viral_respiratory_illness": {
+          "precision": 0.5217391304347826,
+          "recall": 0.5333333333333333,
+          "f1-score": 0.5274725274725275,
+          "support": 45.0
+        },
+        "accuracy": 0.6598984771573604,
+        "macro avg": {
+          "precision": 0.6059044808794357,
+          "recall": 0.6654326847017876,
+          "f1-score": 0.6225066509110893,
+          "support": 197.0
+        },
+        "weighted avg": {
+          "precision": 0.7095024440906929,
+          "recall": 0.6598984771573604,
+          "f1-score": 0.6711384105419493,
+          "support": 197.0
+        }
+      }
+    }
+  },
+  "selected_model_test_metrics": {
+    "accuracy": 0.696969696969697,
+    "macro_precision": 0.6630869130869129,
+    "macro_recall": 0.77740551492961,
+    "macro_f1": 0.6764334305150631,
+    "weighted_precision": 0.7830519648701467,
+    "weighted_recall": 0.696969696969697,
+    "weighted_f1": 0.7074778396206968,
+    "confusion_matrix": [
+      [
+        18,
+        0,
+        0,
+        3,
+        0,
+        0,
+        0
+      ],
+      [
+        1,
+        18,
+        0,
+        0,
+        0,
+        0,
+        2
+      ],
+      [
+        9,
+        1,
+        53,
+        5,
+        0,
+        0,
+        19
+      ],
+      [
+        0,
+        0,
+        0,
+        5,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        8,
+        1,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        4,
+        5,
+        0
+      ],
+      [
+        5,
+        8,
+        0,
+        2,
+        0,
+        0,
+        31
+      ]
+    ],
+    "classification_report": {
+      "allergy_related_condition": {
+        "precision": 0.5454545454545454,
+        "recall": 0.8571428571428571,
+        "f1-score": 0.6666666666666666,
+        "support": 21.0
+      },
+      "asthma_like_respiratory_concern": {
+        "precision": 0.6666666666666666,
+        "recall": 0.8571428571428571,
+        "f1-score": 0.75,
+        "support": 21.0
+      },
+      "ent_concern": {
+        "precision": 1.0,
+        "recall": 0.6091954022988506,
+        "f1-score": 0.7571428571428571,
+        "support": 87.0
+      },
+      "eye_related_condition": {
+        "precision": 0.3333333333333333,
+        "recall": 1.0,
+        "f1-score": 0.5,
+        "support": 5.0
+      },
+      "gastrointestinal_illness": {
+        "precision": 0.6666666666666666,
+        "recall": 0.8888888888888888,
+        "f1-score": 0.7619047619047619,
+        "support": 9.0
+      },
+      "urinary_tract_concern": {
+        "precision": 0.8333333333333334,
+        "recall": 0.5555555555555556,
+        "f1-score": 0.6666666666666666,
+        "support": 9.0
+      },
+      "viral_respiratory_illness": {
+        "precision": 0.5961538461538461,
+        "recall": 0.6739130434782609,
+        "f1-score": 0.6326530612244898,
+        "support": 46.0
+      },
+      "accuracy": 0.696969696969697,
+      "macro avg": {
+        "precision": 0.6630869130869129,
+        "recall": 0.77740551492961,
+        "f1-score": 0.6764334305150631,
+        "support": 198.0
+      },
+      "weighted avg": {
+        "precision": 0.7830519648701467,
+        "recall": 0.696969696969697,
+        "f1-score": 0.7074778396206968,
+        "support": 198.0
+      }
+    }
+  }
+}

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { LogOut, Activity, ShieldPlus, Users, Database, LayoutDashboard, Upload, CheckCircle, Plus, FileSpreadsheet, Clock, Mail } from 'lucide-react';
-import * as XLSX from 'xlsx';
+import Phase4Management from '../components/admin/Phase4Management';
+import ReviewAdminPanel from '../components/admin/ReviewAdminPanel';
 
 const AdminDashboard = () => {
   const { user, logout } = useAuth();
@@ -67,86 +68,11 @@ const AdminDashboard = () => {
 
   const handleBulkUpload = async (e) => {
     e.preventDefault();
-    if (!file) {
-      setUploadStatus('Please select a file first.');
-      return;
-    }
-
-    try {
-      setUploadStatus('Processing file...');
-      const data = await file.arrayBuffer();
-      const workbook = XLSX.read(data);
-      const firstSheetName = workbook.SheetNames[0];
-      const worksheet = workbook.Sheets[firstSheetName];
-      const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-
-      if (json.length < 2) {
-         setUploadStatus('File appears to be empty or missing data rows.');
-         return;
-      }
-
-      const users = JSON.parse(localStorage.getItem('hospital_users') || '[]');
-      let addedCount = 0;
-
-      const rows = json.slice(1);
-
-      rows.forEach((row) => {
-        if (!row || row.length === 0 || !row[0]) return;
-        
-        const name = row[0] ? row[0].toString().trim() : '';
-        const email = row[1] ? row[1].toString().trim() : '';
-        const password = row[2] ? row[2].toString().trim() : '';
-        
-        if (name && email && password) {
-          if (!users.find(u => u.email === email)) {
-            const newUser = {
-              id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
-              name,
-              email,
-              password,
-              role: uploadType,
-              hospitalId: user.hospitalId,
-              createdAt: new Date().toISOString()
-            };
-
-            if (uploadType === 'doctor') {
-              newUser.specialization = row[3] ? row[3].toString().trim() : '';
-              newUser.jobTitle = row[4] ? row[4].toString().trim() : '';
-              newUser.ghanaCard = row[5] ? row[5].toString().trim() : '';
-            } else {
-              const existingId = row[3] ? row[3].toString().trim() : null;
-              if (existingId) {
-                newUser.id = existingId;
-              }
-              newUser.ghanaCard = row[4] ? row[4].toString().trim() : '';
-            }
-
-            users.push(newUser);
-            addedCount++;
-          }
-        }
-      });
-
-      localStorage.setItem('hospital_users', JSON.stringify(users));
-      setUploadStatus(`Successfully extracted and uploaded ${addedCount} ${uploadType}s!`);
-      setFile(null);
-      loadData(); 
-
-      setTimeout(() => setUploadStatus(''), 5000);
-    } catch (err) {
-      console.error(err);
-      setUploadStatus('Error processing file. Ensure it is a valid Excel or CSV.');
-    }
+    setUploadStatus('Legacy bulk account import is disabled because it stored plaintext passwords. Secure bulk provisioning will use the backend in a later phase.');
   };
 
   const handleAssociateDoctor = (doctorId) => {
-    const users = JSON.parse(localStorage.getItem('hospital_users') || '[]');
-    const doctorIndex = users.findIndex(u => u.id === doctorId);
-    if (doctorIndex > -1) {
-      users[doctorIndex].hospitalId = user.hospitalId;
-      localStorage.setItem('hospital_users', JSON.stringify(users));
-      loadData();
-    }
+    setUploadStatus(`Legacy doctor association for ${doctorId} is disabled. Use the authenticated staff API foundation.`);
   };
 
   const handleApproveIdRequest = (req) => {
@@ -212,8 +138,12 @@ const AdminDashboard = () => {
       </div>
 
       <div className="flex-wrap" style={{ gap: '1rem', marginBottom: '2rem', borderBottom: '1px solid var(--glass-border)', paddingBottom: '1rem' }}>
+        {['hospital', 'departments', 'doctors', 'schedules'].map((tab) => (
+          <button key={tab} onClick={() => setActiveTab(tab)} className={`btn ${activeTab === tab ? 'btn-primary' : ''}`} style={{ textTransform: 'capitalize' }}>{tab}</button>
+        ))}
         <button onClick={() => setActiveTab('overview')} className={`btn ${activeTab === 'overview' ? 'btn-primary' : ''}`} style={{ background: activeTab === 'overview' ? 'var(--color-primary)' : 'transparent', color: activeTab === 'overview' ? 'white' : 'var(--color-text-muted)' }}>AI Overview</button>
         <button onClick={() => setActiveTab('staff')} className={`btn ${activeTab === 'staff' ? 'btn-primary' : ''}`} style={{ background: activeTab === 'staff' ? 'var(--color-primary)' : 'transparent', color: activeTab === 'staff' ? 'white' : 'var(--color-text-muted)' }}>Medical Staff</button>
+        {[['directory','Staff Directory'],['analytics','Analytics'],['monitoring','Appointments'],['reports','Reports'],['bulk-secure','Secure Import']].map(([key,label])=><button key={key} onClick={()=>setActiveTab(key)} className={`btn ${activeTab===key?'btn-primary':''}`}>{label}</button>)}
         <button onClick={() => setActiveTab('import')} className={`btn ${activeTab === 'import' ? 'btn-primary' : ''}`} style={{ background: activeTab === 'import' ? 'var(--color-primary)' : 'transparent', color: activeTab === 'import' ? 'white' : 'var(--color-text-muted)' }}>Bulk Import</button>
         <button onClick={() => setActiveTab('requests')} className={`btn ${activeTab === 'requests' ? 'btn-primary' : ''}`} style={{ position: 'relative', background: activeTab === 'requests' ? 'var(--color-primary)' : 'transparent', color: activeTab === 'requests' ? 'white' : 'var(--color-text-muted)' }}>
           ID Requests
@@ -224,6 +154,13 @@ const AdminDashboard = () => {
           )}
         </button>
       </div>
+
+      {['hospital', 'departments', 'doctors', 'schedules'].includes(activeTab) && <Phase4Management section={activeTab} />}
+      {activeTab==='directory'&&<ReviewAdminPanel section="staff"/>}
+      {activeTab==='analytics'&&<ReviewAdminPanel section="analytics"/>}
+      {activeTab==='monitoring'&&<ReviewAdminPanel section="appointments"/>}
+      {activeTab==='reports'&&<ReviewAdminPanel section="reports"/>}
+      {activeTab==='bulk-secure'&&<ReviewAdminPanel section="bulk"/>}
 
       {activeTab === 'overview' && (
         <>

@@ -1,0 +1,1 @@
+export default function PossibleConditionCard({item}){return <article className="condition-card"><span>{item.matchStrength.replaceAll('_',' ')}</span><h4>{item.displayName}</h4><p>{item.shortReason}</p><small>Matched: {item.matchedSymptoms.join(', ')||'reported symptoms'}</small></article>}

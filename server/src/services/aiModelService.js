@@ -1,0 +1,5 @@
+import { z } from 'zod';
+import { env } from '../config/env.js';
+const responseSchema = z.object({assessmentMethod:z.literal('ML_MODEL'),modelVersion:z.string().min(3),predictions:z.array(z.object({condition:z.string().min(2),score:z.number().min(0).max(1),departmentCategory:z.string().min(2)})).min(1).max(5),lowConfidence:z.boolean(),confidenceThreshold:z.number().min(0).max(1),message:z.string().nullable().optional()}).strict();
+export async function requestModelPrediction(input,options={}){const response=await(options.fetchImpl||fetch)(`${options.baseUrl||env.AI_SERVICE_URL}/predict`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(input),signal:AbortSignal.timeout(options.timeoutMs||env.AI_SERVICE_TIMEOUT_MS)});if(!response.ok)throw new Error(`AI service returned ${response.status}`);const parsed=responseSchema.safeParse(await response.json());if(!parsed.success)throw new Error('AI service returned an invalid payload');return parsed.data;}
+export const aiModelService={predict:requestModelPrediction};

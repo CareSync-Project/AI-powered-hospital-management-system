@@ -1,3 +1,3 @@
 # Validators
 
-Request validation schemas will be added here alongside each REST resource. Environment validation already uses Zod in `src/config/env.js`.
+Zod schemas validate Phase 2 route parameters, queries, and bodies. Keep transport validation here and cross-record business rules in services.
