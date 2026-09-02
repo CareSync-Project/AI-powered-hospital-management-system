@@ -105,17 +105,20 @@ export const appointmentService = {
   async createPatientBooking({ patientId, userId, slotId, patientCardId, symptomAssessmentId, reasonForVisit, symptomsSummary, request }, database = prisma) {
     return database.$transaction(async (tx) => {
       const [patient, slot, card] = await Promise.all([
-        patientRepository.findById(patientId, tx), appointmentRepository.findSlot(slotId, tx), patientCardRepository.findById(patientCardId, tx),
+        patientRepository.findById(patientId, tx),
+        appointmentRepository.findSlot(slotId, tx),
+        patientCardId ? patientCardRepository.findById(patientCardId, tx) : null,
       ]);
       if (!patient?.active || patient.userId !== userId) throw new AppError('Patient profile not found', 404);
       if (!slot || slot.date < new Date(new Date().toISOString().slice(0, 10))) throw new AppError('Appointment slot is not available', 409);
       assertSlotCapacity(slot);
       await validateSlotSchedule(slot, tx);
-      if (!card || card.patientId !== patientId || card.hospitalId !== slot.hospitalId || !card.active) throw new AppError('Patient card is not eligible for this booking', 400);
-      if (card.verificationStatus !== 'VERIFIED') throw new AppError('A verified Hospital or NHIS card is required for prebooking', 403);
+      if (card) {
+        if (card.patientId !== patientId || card.hospitalId !== slot.hospitalId || !card.active) throw new AppError('Patient card is not eligible for this booking', 400);
+      }
       const assessment = symptomAssessmentId ? await tx.symptomAssessment.findUnique({ where: { id: symptomAssessmentId } }) : null;
       if (symptomAssessmentId && (!assessment || assessment.patientId !== patientId || assessment.hospitalId !== slot.hospitalId || assessment.appointmentId)) throw new AppError('Symptom assessment is not eligible for this booking', 403);
-      await validateAppointmentContext({ patientId, hospitalId: slot.hospitalId, departmentId: slot.departmentId, doctorId: slot.doctorId, patientCardId }, tx);
+      await validateAppointmentContext({ patientId, hospitalId: slot.hospitalId, departmentId: slot.departmentId, doctorId: slot.doctorId, patientCardId: card?.id || null }, tx);
       const conflict = await appointmentRepository.findPatientConflict(patientId, slot.date, slot.startTime, slot.endTime, null, tx);
       if (conflict) throw new AppError('You already have a conflicting appointment', 409);
       const reservation = await appointmentRepository.reserveSlotOptimistically(slot, tx);

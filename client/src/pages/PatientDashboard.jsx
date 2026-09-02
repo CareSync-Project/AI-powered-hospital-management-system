@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Activity, Bell, Brain, CalendarDays, CreditCard, HeartPulse, Home, LogOut, PlusCircle, UserRound, ChevronRight, CheckCircle2, ShieldAlert } from 'lucide-react';
+import { Activity, Bell, Brain, CalendarDays, HeartPulse, Home, LogOut, PlusCircle, UserRound, ChevronRight, CheckCircle2, ShieldAlert, Sparkles } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { appointmentService } from '../services/appointmentService';
-import { patientCardService } from '../services/patientCardService';
 import { notificationService } from '../services/notificationService';
 import ErrorBoundary from '../components/common/ErrorBoundary';
 import MobileBottomNavigation from '../components/patient/MobileBottomNavigation';
@@ -11,7 +10,6 @@ import InstallPwaPrompt from '../components/patient/InstallPwaPrompt';
 import CareAssistant from '../components/patient/CareAssistant';
 import BookAppointmentPage from './patient/BookAppointmentPage';
 import AppointmentsPage from './patient/AppointmentsPage';
-import PatientCardsPage from './patient/PatientCardsPage';
 import NotificationsPage from './patient/NotificationsPage';
 import PatientProfilePage from './patient/PatientProfilePage';
 import PatientVitalsPage from './patient/PatientVitalsPage';
@@ -23,23 +21,20 @@ const NAV = [
   ['book',          PlusCircle,    'Book Appointment'],
   ['appointments',  CalendarDays,  'My Appointments'],
   ['vitals',        Activity,      'My Vitals'],
-  ['cards',         CreditCard,    'My Health Cards'],
   ['notifications', Bell,          'Notifications'],
   ['profile',       UserRound,     'My Profile']
 ];
 
 function PatientHome({ user, onSelect, refreshKey }) {
   const [appointments, setAppointments] = useState([]);
-  const [cards, setCards] = useState([]);
 
   useEffect(() => {
     appointmentService.list().then(r => setAppointments(r.data || [])).catch(() => {});
-    patientCardService.list().then(r => setCards(r.data || [])).catch(() => {});
   }, [refreshKey]);
 
   const upcomingAppts = appointments.filter(x => !['CANCELLED', 'COMPLETED', 'MISSED'].includes(x.status));
   const nextAppt = upcomingAppts[0];
-  const verifiedCards = cards.filter(x => x.verificationStatus === 'VERIFIED');
+  const completedCount = appointments.filter(x => x.status === 'COMPLETED').length;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
@@ -64,7 +59,7 @@ function PatientHome({ user, onSelect, refreshKey }) {
             Welcome back, {user?.profile?.firstName || user?.firstName || 'Patient'}!
           </h2>
           <p style={{ margin: 0, opacity: 0.85, fontSize: '0.9rem', maxWidth: '480px' }}>
-            Access personalized AI symptom support, manage appointment bookings, review clinical vitals, and present your digital hospital ID card.
+            Access personalized AI symptom triage, schedule hospital appointments, and review your clinical vitals and consultation summaries.
           </p>
         </div>
 
@@ -135,23 +130,23 @@ function PatientHome({ user, onSelect, refreshKey }) {
           )}
         </div>
 
-        {/* Verified Hospital Cards */}
+        {/* AI Symptom Check KPI */}
         <div
-          onClick={() => onSelect('cards')}
+          onClick={() => onSelect('symptoms')}
           style={{
             padding: '1.5rem', backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '14px',
             cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 2px 8px rgba(0,0,0,0.02)'
           }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-            <span style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: '600', textTransform: 'uppercase' }}>Health Cards</span>
-            <CreditCard size={18} color="#004449" />
+            <span style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: '600', textTransform: 'uppercase' }}>Clinical AI Triage</span>
+            <Sparkles size={18} color="#004449" />
           </div>
-          <div style={{ fontSize: '2rem', fontWeight: '800', color: '#004449' }}>
-            {verifiedCards.length}
+          <div style={{ fontSize: '1.1rem', fontWeight: '700', color: '#004449' }}>
+            AI Health Assistant
           </div>
           <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '0.25rem' }}>
-            {cards.length} total card(s) logged ({cards.filter(x => x.verificationStatus === 'PENDING').length} pending verification)
+            Check symptoms, triage emergency safety, and match clinic departments
           </div>
         </div>
 
@@ -202,21 +197,21 @@ function PatientHome({ user, onSelect, refreshKey }) {
         <div style={{ padding: '1.5rem', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '14px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#0f172a', fontWeight: '700', marginBottom: '0.35rem' }}>
-              <CreditCard size={20} color="#004449" /> Digital Hospital Card
+              <CalendarDays size={20} color="#004449" /> Consultations & Follow-ups
             </div>
             <p style={{ fontSize: '0.85rem', color: '#64748b', margin: 0, lineHeight: 1.5 }}>
-              Present your verified hospital card or NHIS number during check-in for instant verification at the reception or triage desk.
+              Review your past clinical diagnoses, treatment summaries, and doctor prescription notes in the appointments history.
             </p>
           </div>
           <button
-            onClick={() => onSelect('cards')}
+            onClick={() => onSelect('appointments')}
             style={{
               marginTop: '1rem', padding: '0.55rem 1.1rem', backgroundColor: '#f1f5f9', color: '#0f172a',
               border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '0.82rem', fontWeight: '700', cursor: 'pointer',
               alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: '0.35rem'
             }}
           >
-            View Digital Cards <ChevronRight size={14} />
+            View History ({completedCount} visits) <ChevronRight size={14} />
           </button>
         </div>
       </div>
@@ -248,128 +243,192 @@ export default function PatientDashboard() {
 
   const loadBadges = async () => {
     try {
-      const res = await appointmentService.list();
-      const list = res.data || [];
-      setUpcomingCount(list.filter(x => !['CANCELLED', 'COMPLETED', 'MISSED'].includes(x.status)).length);
+      const r = await appointmentService.list();
+      const list = r.data?.data || r.data || [];
+      const upcoming = Array.isArray(list) ? list.filter(x => !['CANCELLED', 'COMPLETED', 'MISSED'].includes(x.status)) : [];
+      setUpcomingCount(upcoming.length);
     } catch (err) {
-      console.error('Patient appointments badge load error:', err.message);
+      // quiet fallback
     }
-    loadNotifications();
   };
 
   useEffect(() => {
+    loadNotifications();
     loadBadges();
-  }, [tab, refreshKey]);
+    const interval = setInterval(() => {
+      loadNotifications();
+      loadBadges();
+    }, 60000);
+    return () => clearInterval(interval);
+  }, [refreshKey]);
 
-  const booked = (target) => {
-    setRefreshKey(x => x + 1);
-    if (target) setTab(target);
-  };
-
-  const openBooking = (result) => {
-    setBookingPrefill({
-      hospitalId: result.hospitalId || result.recommendedDepartment?.hospitalId,
-      departmentId: result.departmentId || result.recommendedDepartment?.id,
-      assessmentId: result.assessmentId || result.id
-    });
+  const openBooking = (prefill) => {
+    setBookingPrefill(prefill || null);
     setTab('book');
   };
 
+  const booked = () => {
+    setRefreshKey((k) => k + 1);
+    setBookingPrefill(null);
+    setTab('appointments');
+  };
+
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', backgroundColor: '#f8fafc' }}>
+    <div className="patient-shell" style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#f8fafc' }}>
+      <InstallPwaPrompt />
       <OfflineBanner />
 
-      {/* Sidebar Navigation */}
+      {/* Left Sidebar Navigation */}
       <aside style={{
         width: '260px',
-        backgroundColor: 'var(--color-background)',
-        borderRight: '1px solid rgba(255, 255, 255, 0.1)',
+        backgroundColor: '#004449',
+        color: '#ffffff',
         display: 'flex',
         flexDirection: 'column',
-        padding: '1.5rem 1rem',
-        position: 'sticky',
-        top: 0,
-        height: '100vh',
-        boxSizing: 'border-box'
+        justifyContent: 'space-between',
+        padding: '1.75rem 1.25rem',
+        boxShadow: '4px 0 20px rgba(0, 68, 73, 0.08)',
+        zIndex: 10
       }}>
-        {/* Brand Header */}
-        <div style={{ padding: '0 0.5rem 1.5rem 0.5rem', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', marginBottom: '1.5rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontWeight: '700', fontSize: '1.2rem', color: 'var(--color-primary)' }}>
-            <div style={{ background: 'var(--color-primary)', color: '#004449', padding: '0.4rem', borderRadius: '8px', display: 'flex', alignItems: 'center' }}>
-              <HeartPulse size={20} />
+        <div>
+          {/* Hospital Brand Header */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0 0.5rem 1.75rem 0.5rem', borderBottom: '1px solid rgba(255, 255, 255, 0.12)' }}>
+            <div style={{
+              width: '38px',
+              height: '38px',
+              borderRadius: '10px',
+              backgroundColor: '#007A83',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#ffffff'
+            }}>
+              <HeartPulse size={22} />
             </div>
-            Patient Portal
+            <div>
+              <h1 style={{ fontSize: '1.2rem', fontWeight: '800', letterSpacing: '-0.02em', margin: 0, color: '#ffffff' }}>
+                CareSync
+              </h1>
+              <span style={{ fontSize: '0.7rem', color: '#99f6e4', letterSpacing: '0.05em', textTransform: 'uppercase', fontWeight: '600' }}>
+                Patient Portal
+              </span>
+            </div>
           </div>
-          <div style={{ fontSize: '0.85rem', color: 'var(--color-text-main)', marginTop: '0.6rem', fontWeight: '600' }}>
-            {user?.profile?.firstName || user?.firstName || 'Patient'} {user?.profile?.lastName || user?.lastName || ''}
-          </div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginTop: '0.15rem' }}>
-            {user?.email || 'CareSync Patient'}
-          </div>
+
+          {/* Navigation Items */}
+          <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', marginTop: '1.5rem' }}>
+            {NAV.map(([key, Icon, label]) => {
+              const isActive = tab === key;
+              return (
+                <button
+                  key={key}
+                  onClick={() => setTab(key)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    width: '100%',
+                    padding: '0.75rem 1rem',
+                    borderRadius: '10px',
+                    border: 'none',
+                    backgroundColor: isActive ? 'rgba(255, 255, 255, 0.15)' : 'transparent',
+                    color: isActive ? '#ffffff' : '#cbd5e1',
+                    fontSize: '0.875rem',
+                    fontWeight: isActive ? '700' : '500',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                    textAlign: 'left'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isActive) e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.06)';
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isActive) e.currentTarget.style.backgroundColor = 'transparent';
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <Icon size={18} color={isActive ? '#99f6e4' : '#94a3b8'} />
+                    <span>{label}</span>
+                  </div>
+
+                  {/* Badges for active tabs */}
+                  {key === 'appointments' && upcomingCount > 0 && (
+                    <span style={{
+                      backgroundColor: '#007A83',
+                      color: '#ffffff',
+                      fontSize: '0.7rem',
+                      fontWeight: '800',
+                      padding: '0.15rem 0.5rem',
+                      borderRadius: '999px'
+                    }}>
+                      {upcomingCount}
+                    </span>
+                  )}
+
+                  {key === 'notifications' && unreadCount > 0 && (
+                    <span style={{
+                      backgroundColor: '#dc2626',
+                      color: '#ffffff',
+                      fontSize: '0.7rem',
+                      fontWeight: '800',
+                      padding: '0.15rem 0.5rem',
+                      borderRadius: '999px'
+                    }}>
+                      {unreadCount}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </nav>
         </div>
 
-        {/* Navigation Items */}
-        <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.35rem', overflowY: 'auto' }}>
-          {NAV.map(([key, Icon, label]) => {
-            const isActive = tab === key;
-            let badgeVal = 0;
-            if (key === 'notifications') badgeVal = unreadCount;
-            if (key === 'appointments') badgeVal = upcomingCount;
+        {/* User Profile & Logout Box */}
+        <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.12)', paddingTop: '1.25rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem', padding: '0 0.5rem' }}>
+            <div style={{
+              width: '36px',
+              height: '36px',
+              borderRadius: '50%',
+              backgroundColor: 'rgba(255, 255, 255, 0.15)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontWeight: '700',
+              fontSize: '0.875rem'
+            }}>
+              {user?.profile?.firstName?.[0] || user?.firstName?.[0] || 'P'}
+            </div>
+            <div style={{ overflow: 'hidden' }}>
+              <div style={{ fontSize: '0.875rem', fontWeight: '700', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
+                {user?.profile?.firstName || user?.firstName || 'Patient'} {user?.profile?.lastName || user?.lastName || ''}
+              </div>
+              <div style={{ fontSize: '0.75rem', color: '#94a3b8', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
+                {user?.email}
+              </div>
+            </div>
+          </div>
 
-            return (
-              <button
-                key={key}
-                onClick={() => setTab(key)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  width: '100%',
-                  padding: '0.75rem 1rem',
-                  borderRadius: '10px',
-                  border: 'none',
-                  background: isActive ? 'var(--color-primary)' : 'transparent',
-                  color: isActive ? '#004449' : 'var(--color-text-main)',
-                  fontWeight: isActive ? '700' : '500',
-                  fontSize: '0.875rem',
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                  transition: 'all 0.2s ease'
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                  <Icon size={18} color={isActive ? '#004449' : 'var(--color-text-muted)'} />
-                  {label}
-                </div>
-                {badgeVal > 0 && (
-                  <span style={{
-                    background: isActive ? '#004449' : 'var(--color-primary)',
-                    color: isActive ? '#ffffff' : '#004449',
-                    fontSize: '0.7rem',
-                    padding: '0.15rem 0.5rem',
-                    borderRadius: '999px',
-                    fontWeight: 'bold'
-                  }}>
-                    {badgeVal}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </nav>
-
-        {/* Logout Section */}
-        <div style={{ paddingTop: '1rem', borderTop: '1px solid rgba(255, 255, 255, 0.1)', marginTop: 'auto' }}>
-          <InstallPwaPrompt />
           <button
             onClick={logout}
             style={{
-              width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-              padding: '0.65rem', backgroundColor: 'transparent', color: '#ff8a8a',
-              border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '8px', fontSize: '0.85rem', cursor: 'pointer', fontWeight: '600'
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.5rem',
+              width: '100%',
+              padding: '0.65rem',
+              backgroundColor: 'rgba(239, 68, 68, 0.15)',
+              color: '#fca5a5',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
+              borderRadius: '8px',
+              fontSize: '0.82rem',
+              fontWeight: '700',
+              cursor: 'pointer',
+              transition: 'all 0.15s ease'
             }}
           >
-            <LogOut size={16} /> Logout
+            <LogOut size={16} /> Sign Out
           </button>
         </div>
       </aside>
@@ -429,10 +488,9 @@ export default function PatientDashboard() {
           <ErrorBoundary key={tab}>
             {tab === 'home'          && <PatientHome user={user} onSelect={setTab} refreshKey={refreshKey} />}
             {tab === 'symptoms'      && <SymptomAssessmentPage onBook={openBooking} />}
-            {tab === 'book'          && <BookAppointmentPage initialSelection={bookingPrefill} openCards={() => setTab('cards')} onBooked={booked} />}
+            {tab === 'book'          && <BookAppointmentPage initialSelection={bookingPrefill} onBooked={booked} />}
             {tab === 'appointments'  && <AppointmentsPage refreshKey={refreshKey} onNavigate={setTab} />}
             {tab === 'vitals'        && <PatientVitalsPage />}
-            {tab === 'cards'         && <PatientCardsPage />}
             {tab === 'notifications'  && <NotificationsPage />}
             {tab === 'profile'        && <PatientProfilePage />}
           </ErrorBoundary>

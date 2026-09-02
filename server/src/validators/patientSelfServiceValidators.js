@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { dateString, uuid } from './commonValidators.js';
 
-export const patientBookingSchema = z.object({ slotId: uuid, patientCardId: uuid, symptomAssessmentId: uuid.optional().nullable(), reasonForVisit: z.string().trim().min(3).max(1000), symptomsSummary: z.string().trim().max(2000).optional().nullable() }).strict();
+export const patientBookingSchema = z.object({ slotId: uuid, patientCardId: uuid.optional().nullable(), symptomAssessmentId: uuid.optional().nullable(), reasonForVisit: z.string().trim().min(3).max(1000), symptomsSummary: z.string().trim().max(2000).optional().nullable() }).strict();
 export const cancellationSchema = z.object({ cancellationReason: z.string().trim().min(3).max(500).optional().nullable() }).strict();
 export const rescheduleSchema = z.object({ newSlotId: uuid }).strict();
 const bookableDate = dateString.refine((value) => value >= new Date().toISOString().slice(0, 10), 'Past dates are not available');

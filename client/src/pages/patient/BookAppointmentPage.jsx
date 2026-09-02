@@ -1,24 +1,25 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { appointmentService } from '../../services/appointmentService';
-import { patientCardService } from '../../services/patientCardService';
 import { patientService } from '../../services/patientService';
+import { Calendar, Clock, User, Stethoscope, CheckCircle2, ChevronRight, ArrowLeft } from 'lucide-react';
 
-const STEPS = ['Department', 'Date', 'Doctor & Time', 'Card', 'Visit Details', 'Confirmation'];
+const STEPS = ['Department', 'Date', 'Doctor & Time', 'Visit Details', 'Confirmation'];
 const DAY_INDEX = { SUNDAY: 0, MONDAY: 1, TUESDAY: 2, WEDNESDAY: 3, THURSDAY: 4, FRIDAY: 5, SATURDAY: 6 };
 const time = (value) => value ? new Date(value).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' }) : '';
 
-export default function BookAppointmentPage({ onBooked, openCards, initialSelection }) {
+export default function BookAppointmentPage({ onBooked, initialSelection }) {
   const [step, setStep] = useState(0);
   const [data, setData] = useState({
     reasonForVisit: '',
     symptomsSummary: '',
     departmentId: initialSelection?.departmentId || '',
-    symptomAssessmentId: initialSelection?.assessmentId || null
+    symptomAssessmentId: initialSelection?.assessmentId || null,
+    date: '',
+    slotId: ''
   });
   const [hospital, setHospital] = useState(null);
   const [departments, setDepartments] = useState([]);
   const [doctors, setDoctors] = useState([]);
-  const [cards, setCards] = useState([]);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [confirmed, setConfirmed] = useState(null);
@@ -34,13 +35,6 @@ export default function BookAppointmentPage({ onBooked, openCards, initialSelect
         setHospital(response?.hospital || null);
       })
       .catch((e) => setError(e.message));
-
-    patientCardService.list()
-      .then((r) => {
-        const list = Array.isArray(r) ? r : (Array.isArray(r?.data) ? r.data : (r?.data?.data || []));
-        setCards(list);
-      })
-      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -56,13 +50,11 @@ export default function BookAppointmentPage({ onBooked, openCards, initialSelect
 
   const safeDepts = Array.isArray(departments) ? departments : [];
   const safeDocs = Array.isArray(doctors) ? doctors : [];
-  const safeCards = Array.isArray(cards) ? cards : [];
 
   const department = safeDepts.find((item) => item.id === data.departmentId);
   const slot = safeDocs
     .flatMap((doctor) => (doctor.appointmentSlots || []).map((item) => ({ ...item, doctor })))
     .find((item) => item.id === data.slotId);
-  const card = safeCards.find((item) => item.id === data.patientCardId);
 
   const validDays = useMemo(
     () => new Set((department?.schedules || []).map((schedule) => DAY_INDEX[schedule.dayOfWeek])),
@@ -70,11 +62,10 @@ export default function BookAppointmentPage({ onBooked, openCards, initialSelect
   );
 
   const canContinue = [
-    data.departmentId,
-    data.date && validDays.has(new Date(`${data.date}T12:00:00`).getDay()),
-    data.slotId,
-    data.patientCardId,
-    data.reasonForVisit.trim().length >= 3,
+    Boolean(data.departmentId),
+    Boolean(data.date && validDays.has(new Date(`${data.date}T12:00:00`).getDay())),
+    Boolean(data.slotId),
+    Boolean(data.reasonForVisit.trim().length >= 3),
     true
   ][step];
 
@@ -102,7 +93,6 @@ export default function BookAppointmentPage({ onBooked, openCards, initialSelect
     try {
       const response = await appointmentService.book({
         slotId: data.slotId,
-        patientCardId: data.patientCardId,
         symptomAssessmentId: data.symptomAssessmentId || null,
         reasonForVisit: data.reasonForVisit,
         symptomsSummary: data.symptomsSummary || null
@@ -110,31 +100,71 @@ export default function BookAppointmentPage({ onBooked, openCards, initialSelect
       setConfirmed(response.data?.data || response.data);
       onBooked?.();
     } catch (e) {
-      setError(e.message);
+      setError(errMessage(e));
     } finally {
       setBusy(false);
     }
   };
 
+  const errMessage = (e) => e.response?.data?.message || e.message || 'Failed to complete appointment booking.';
+
   if (confirmed) {
     return (
-      <section className="patient-panel booking-confirmed">
-        <h2>Appointment Confirmed</h2>
-        <strong>{confirmed.appointmentNumber}</strong>
-        <p>CareSync Hospital · {confirmed.department?.name}</p>
-        <p>Dr. {confirmed.doctor?.firstName} {confirmed.doctor?.lastName}</p>
-        <p>{new Date(confirmed.appointmentDate).toLocaleDateString()} at {time(confirmed.startTime)}</p>
-        <button onClick={() => onBooked?.('appointments')}>Go to My Appointments</button>
-      </section>
+      <div style={{
+        backgroundColor: '#ffffff',
+        border: '1px solid #e2e8f0',
+        borderRadius: '16px',
+        padding: '2.5rem',
+        textAlign: 'center',
+        maxWidth: '580px',
+        margin: '2rem auto',
+        boxShadow: '0 4px 20px rgba(0, 68, 73, 0.06)'
+      }}>
+        <div style={{ width: '64px', height: '64px', borderRadius: '50%', backgroundColor: '#dcfce7', color: '#15803d', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.25rem auto' }}>
+          <CheckCircle2 size={36} />
+        </div>
+        <h2 style={{ fontSize: '1.5rem', fontWeight: '800', color: '#004449', margin: '0 0 0.25rem 0' }}>
+          Appointment Confirmed!
+        </h2>
+        <div style={{ fontSize: '1.2rem', fontWeight: '800', color: '#007A83', margin: '0.5rem 0' }}>
+          #{confirmed.appointmentNumber}
+        </div>
+        <p style={{ color: '#475569', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
+          CareSync Hospital · {confirmed.department?.name}<br />
+          Dr. {confirmed.doctor?.firstName} {confirmed.doctor?.lastName}<br />
+          {new Date(confirmed.appointmentDate).toLocaleDateString(undefined, { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })} at {time(confirmed.startTime)}
+        </p>
+        <button
+          onClick={() => onBooked?.('appointments')}
+          style={{
+            padding: '0.75rem 1.75rem',
+            backgroundColor: '#004449',
+            color: '#ffffff',
+            border: 'none',
+            borderRadius: '10px',
+            fontWeight: '700',
+            fontSize: '0.9rem',
+            cursor: 'pointer',
+            boxShadow: '0 4px 12px rgba(0, 68, 73, 0.2)'
+          }}
+        >
+          View in My Appointments →
+        </button>
+      </div>
     );
   }
 
   return (
-    <section className="patient-panel booking-page">
-      <h2>Book a CareSync Appointment</h2>
-      <p className="patient-help">CareSync Hospital is selected automatically.</p>
+    <section className="patient-panel booking-page" style={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '16px', padding: '2rem' }}>
+      <h2 style={{ fontSize: '1.4rem', fontWeight: '800', color: '#004449', margin: '0 0 0.25rem 0' }}>
+        Book a Clinical Appointment
+      </h2>
+      <p style={{ color: '#64748b', fontSize: '0.875rem', margin: '0 0 1.5rem 0' }}>
+        CareSync Hospital · Select a department, doctor, and convenient time slot.
+      </p>
 
-      <ol className="booking-steps">
+      {/* Stepper Bar */}
+      <ol className="booking-steps" style={{ marginBottom: '2rem' }}>
         {STEPS.map((label, index) => (
           <li key={label} className={index === step ? 'active' : index < step ? 'done' : ''}>
             <span>{index + 1}</span>
@@ -143,31 +173,39 @@ export default function BookAppointmentPage({ onBooked, openCards, initialSelect
         ))}
       </ol>
 
-      {error && <p className="patient-error" role="alert">{error}</p>}
+      {error && (
+        <div style={{ padding: '0.85rem 1.25rem', backgroundColor: '#fee2e2', color: '#b91c1c', borderRadius: '10px', fontSize: '0.875rem', fontWeight: '600', marginBottom: '1.25rem' }}>
+          {error}
+        </div>
+      )}
 
+      {/* Step 0: Department Selection */}
       {step === 0 && (
         <div className="choice-grid">
           {safeDepts.map((item) => (
             <button
               key={item.id}
               className={data.departmentId === item.id ? 'selected' : ''}
-              onClick={() => choose({ departmentId: item.id, date: '', slotId: '', patientCardId: '' })}
+              onClick={() => choose({ departmentId: item.id, date: '', slotId: '' })}
             >
               <strong>{item.name}</strong>
               <small>{item.description}</small>
               <small>
                 {(item.schedules || [])
                   .map((schedule) => `${schedule.dayOfWeek} ${time(schedule.startTime)}–${time(schedule.endTime)}`)
-                  .join(' · ') || 'No clinic days configured'}
+                  .join(' · ') || 'Clinic hours available'}
               </small>
             </button>
           ))}
         </div>
       )}
 
+      {/* Step 1: Date Selection */}
       {step === 1 && (
         <div>
-          <label htmlFor="appointment-date">Eligible clinic date</label>
+          <label htmlFor="appointment-date" style={{ display: 'block', fontWeight: '700', fontSize: '0.9rem', color: '#0f172a', marginBottom: '0.5rem' }}>
+            Choose Clinic Date
+          </label>
           <input
             id="appointment-date"
             type="date"
@@ -175,18 +213,46 @@ export default function BookAppointmentPage({ onBooked, openCards, initialSelect
             max={maxDate}
             value={data.date || ''}
             onChange={(event) => choose({ date: event.target.value, slotId: '' })}
+            style={{
+              padding: '0.75rem 1rem',
+              borderRadius: '8px',
+              border: '1.5px solid #cbd5e1',
+              fontSize: '0.95rem',
+              outline: 'none',
+              maxWidth: '320px',
+              width: '100%'
+            }}
           />
           {data.date && !canContinue && (
-            <p className="patient-error" style={{ marginTop: '0.5rem' }}>This department does not operate on the selected day.</p>
+            <p className="patient-error" style={{ marginTop: '0.75rem' }}>
+              This department does not operate on the selected day of the week.
+            </p>
           )}
-          <p className="patient-help">Dates are available up to 60 days ahead.</p>
+          <p className="patient-help" style={{ marginTop: '0.5rem', fontSize: '0.8rem', color: '#64748b' }}>
+            Appointments can be scheduled up to 60 days in advance.
+          </p>
         </div>
       )}
 
+      {/* Step 2: Doctor & Slot Selection */}
       {step === 2 && (
         <div>
-          <button disabled={busy} onClick={recommend} style={{ marginBottom: '1rem' }}>
-            {busy ? 'Calculating...' : 'Recommend earliest available doctor'}
+          <button
+            disabled={busy}
+            onClick={recommend}
+            style={{
+              marginBottom: '1.25rem',
+              padding: '0.55rem 1rem',
+              backgroundColor: '#f0fdfa',
+              border: '1.5px solid #007A83',
+              color: '#004449',
+              borderRadius: '8px',
+              fontWeight: '700',
+              fontSize: '0.85rem',
+              cursor: 'pointer'
+            }}
+          >
+            {busy ? 'Calculating...' : '⚡ Recommend earliest available doctor slot'}
           </button>
           <div className="slot-list">
             {safeDocs.flatMap((doctor) =>
@@ -203,87 +269,108 @@ export default function BookAppointmentPage({ onBooked, openCards, initialSelect
               ))
             )}
           </div>
-          {!safeDocs.length && <p style={{ color: '#64748b' }}>No appointments are available for this date.</p>}
-        </div>
-      )}
-
-      {step === 3 && (
-        <div>
-          <div className="choice-grid">
-            {safeCards
-              .filter((item) => !hospital || item.hospitalId === hospital.id)
-              .map((item) => (
-                <button
-                  key={item.id}
-                  disabled={item.verificationStatus !== 'VERIFIED'}
-                  className={data.patientCardId === item.id ? 'selected' : ''}
-                  onClick={() => choose({ patientCardId: item.id })}
-                >
-                  <strong>{item.cardType ? item.cardType.replace('_', ' ') : 'Card'}</strong>
-                  <span>{item.cardNumber}</span>
-                  <small>{item.verificationStatus === 'PENDING' ? 'Pending CareSync verification' : item.verificationStatus}</small>
-                </button>
-              ))}
-          </div>
-          {!safeCards.some((item) => item.verificationStatus === 'VERIFIED') && (
-            <p style={{ marginTop: '1rem' }}>
-              No verified card is available.{' '}
-              <button onClick={openCards} style={{ marginLeft: '0.5rem' }}>Add Hospital/NHIS Card</button>
+          {!safeDocs.length && (
+            <p style={{ color: '#64748b', fontSize: '0.875rem' }}>
+              No active doctor slots are scheduled for this date.
             </p>
           )}
         </div>
       )}
 
-      {step === 4 && (
+      {/* Step 3: Visit Details */}
+      {step === 3 && (
         <div className="form-stack">
-          <label>
-            Reason for visit
+          <label style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', fontWeight: '700', fontSize: '0.875rem' }}>
+            Primary Reason for Visit *
             <textarea
               value={data.reasonForVisit}
               maxLength={1000}
               onChange={(event) => choose({ reasonForVisit: event.target.value })}
               required
-              placeholder="e.g. Regular medical checkup, recurring fever..."
+              placeholder="e.g. Regular medical follow-up, persistent cough, routine health check..."
+              style={{ padding: '0.75rem', borderRadius: '8px', border: '1.5px solid #cbd5e1', fontSize: '0.9rem', minHeight: '80px', outline: 'none' }}
             />
           </label>
-          <label>
-            Brief symptoms or complaint (optional)
+          <label style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', fontWeight: '700', fontSize: '0.875rem', marginTop: '1rem' }}>
+            Symptoms or Additional Complaints (optional)
             <textarea
               value={data.symptomsSummary}
               maxLength={2000}
               onChange={(event) => choose({ symptomsSummary: event.target.value })}
-              placeholder="Describe any specific symptoms..."
+              placeholder="Describe any specific symptoms or health context for the doctor..."
+              style={{ padding: '0.75rem', borderRadius: '8px', border: '1.5px solid #cbd5e1', fontSize: '0.9rem', minHeight: '80px', outline: 'none' }}
             />
           </label>
-          <p className="patient-help">This information does not provide a confirmed diagnosis.</p>
         </div>
       )}
 
-      {step === 5 && (
-        <div className="booking-summary">
-          <h3>Booking Summary</h3>
-          <p><b>Hospital:</b> CareSync Hospital</p>
-          <p><b>Department:</b> {department?.name}</p>
-          <p><b>Doctor:</b> Dr. {slot?.doctor?.firstName} {slot?.doctor?.lastName}</p>
-          <p><b>Date/Time:</b> {data.date} · {slot && time(slot.startTime)}</p>
-          <p><b>Card:</b> {card?.cardType ? card.cardType.replace('_', ' ') : ''} {card?.cardNumber}</p>
-          <p><b>Reason:</b> {data.reasonForVisit}</p>
+      {/* Step 4: Final Confirmation */}
+      {step === 4 && (
+        <div className="booking-summary" style={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '1.5rem' }}>
+          <h3 style={{ fontSize: '1.15rem', fontWeight: '800', color: '#004449', margin: '0 0 1rem 0' }}>
+            Review Appointment Booking
+          </h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', fontSize: '0.9rem' }}>
+            <div>
+              <span style={{ fontSize: '0.75rem', color: '#64748b', textTransform: 'uppercase', fontWeight: '700' }}>Hospital & Dept</span>
+              <div style={{ fontWeight: '700', color: '#0f172a', marginTop: '0.2rem' }}>CareSync Hospital · {department?.name}</div>
+            </div>
+            <div>
+              <span style={{ fontSize: '0.75rem', color: '#64748b', textTransform: 'uppercase', fontWeight: '700' }}>Doctor</span>
+              <div style={{ fontWeight: '700', color: '#004449', marginTop: '0.2rem' }}>Dr. {slot?.doctor?.firstName} {slot?.doctor?.lastName}</div>
+            </div>
+            <div>
+              <span style={{ fontSize: '0.75rem', color: '#64748b', textTransform: 'uppercase', fontWeight: '700' }}>Date & Slot</span>
+              <div style={{ fontWeight: '700', color: '#0f172a', marginTop: '0.2rem' }}>{data.date} at {slot && time(slot.startTime)}</div>
+            </div>
+          </div>
+          <div style={{ marginTop: '1.25rem', paddingTop: '1rem', borderTop: '1px solid #e2e8f0' }}>
+            <span style={{ fontSize: '0.75rem', color: '#64748b', textTransform: 'uppercase', fontWeight: '700' }}>Reason for Visit</span>
+            <p style={{ margin: '0.25rem 0 0 0', color: '#334155' }}>{data.reasonForVisit}</p>
+          </div>
         </div>
       )}
 
-      <div className="wizard-actions">
-        {step > 0 && (
-          <button className="secondary" disabled={busy} onClick={() => setStep(step - 1)}>
-            Back
+      {/* Navigation Buttons */}
+      <div className="wizard-actions" style={{ marginTop: '2rem', display: 'flex', justifyContent: 'space-between' }}>
+        {step > 0 ? (
+          <button className="secondary" disabled={busy} onClick={() => setStep(step - 1)} style={{ padding: '0.65rem 1.25rem', borderRadius: '8px', cursor: 'pointer' }}>
+            ← Back
           </button>
-        )}
-        {step < 5 ? (
-          <button disabled={!canContinue || busy} onClick={() => setStep(step + 1)}>
-            Continue
+        ) : <div />}
+        
+        {step < 4 ? (
+          <button
+            disabled={!canContinue || busy}
+            onClick={() => setStep(step + 1)}
+            style={{
+              padding: '0.75rem 1.5rem',
+              backgroundColor: !canContinue || busy ? '#94a3b8' : '#004449',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: '8px',
+              fontWeight: '700',
+              cursor: !canContinue || busy ? 'not-allowed' : 'pointer'
+            }}
+          >
+            Continue →
           </button>
         ) : (
-          <button disabled={busy} onClick={confirm}>
-            {busy ? 'Booking…' : 'Confirm Booking'}
+          <button
+            disabled={busy}
+            onClick={confirm}
+            style={{
+              padding: '0.75rem 1.75rem',
+              background: 'linear-gradient(135deg, #004449, #007A83)',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: '8px',
+              fontWeight: '700',
+              cursor: busy ? 'not-allowed' : 'pointer',
+              boxShadow: '0 4px 12px rgba(0, 68, 73, 0.2)'
+            }}
+          >
+            {busy ? 'Booking…' : 'Confirm & Schedule Appointment'}
           </button>
         )}
       </div>
