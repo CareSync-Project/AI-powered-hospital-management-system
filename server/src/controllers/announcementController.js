@@ -1,4 +1,4 @@
-import { prisma } from '../config/prisma.js';
+import prisma from '../config/prisma.js';
 import { getAdminHospitalId } from '../services/authorizationService.js';
 import { auditService } from '../services/auditService.js';
 import { emailService } from '../services/emailService.js';
@@ -34,18 +34,26 @@ export const announcementController = {
   async create(request, response) {
     const hospitalId = getAdminHospitalId(request.auth);
     const { title, message, audience } = request.body;
-    const roles = audienceRoles[audience];
+    const roles = audienceRoles[audience] || ['PATIENT', 'DOCTOR', 'NURSE'];
 
-    // Fan-out: find all active users matching the role filter in this hospital
+    // Build role-specific hospital criteria to match Prisma schema relations
+    const hospitalConditions = [];
+    if (roles.includes('PATIENT')) {
+      hospitalConditions.push({ patientProfile: { hospitalRecords: { some: { hospitalId, status: 'ACTIVE' } } } });
+    }
+    if (roles.includes('DOCTOR')) {
+      hospitalConditions.push({ doctorProfile: { hospitalAffiliations: { some: { hospitalId, active: true } } } });
+    }
+    if (roles.includes('NURSE')) {
+      hospitalConditions.push({ nurseProfile: { hospitalId } });
+    }
+
+    // Fan-out: find all active users matching role and hospital criteria
     const targetUsers = await prisma.user.findMany({
       where: {
         active: true,
         role: { in: roles },
-        OR: [
-          { patientProfile: { patientHospitalRecords: { some: { hospitalId, status: 'ACTIVE' } } } },
-          { doctorProfile: { affiliations: { some: { hospitalId, active: true } } } },
-          { nurseProfile: { hospitalId } },
-        ],
+        ...(hospitalConditions.length > 0 ? { OR: hospitalConditions } : {})
       },
       select: {
         id: true,

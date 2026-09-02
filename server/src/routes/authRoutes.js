@@ -14,4 +14,16 @@ router.get('/me', authenticate, asyncHandler(authController.me));
 router.post('/logout', authenticate, asyncHandler(authController.logout));
 router.post('/logout-all', authenticate, asyncHandler(authController.logoutAll));
 router.post('/change-password', authenticate, validate({ body: changePasswordSchema }), asyncHandler(authController.changePassword));
+import { notificationService } from '../services/notificationService.js';
+
+router.get('/notifications', authenticate, asyncHandler(async (req, res) => {
+  res.json({ success: true, data: await notificationService.list(req.auth.userId) });
+}));
+router.patch('/notifications/read-all', authenticate, asyncHandler(async (req, res) => {
+  res.json({ success: true, data: await notificationService.markAllRead(req.auth.userId) });
+}));
+router.patch('/notifications/:id/read', authenticate, asyncHandler(async (req, res) => {
+  res.json({ success: true, data: await notificationService.markRead(req.params.id) });
+}));
+
 export default router;

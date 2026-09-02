@@ -16,7 +16,57 @@ export async function validateDoctorDepartmentContext(doctorId, departmentId, ho
   return { affiliation, assignment, department };
 }
 
+import { notificationService } from './notificationService.js';
+
 export const doctorService = {
+  async allAppointments(doctorId) {
+    return prisma.appointment.findMany({
+      where: { doctorId },
+      include: {
+        patient: { select: { id: true, firstName: true, lastName: true, phone: true } },
+        department: { select: { id: true, name: true, code: true } },
+        triageRecords: { take: 1, orderBy: { createdAt: 'desc' } },
+        vitalRecords: { where: { verificationStatus: 'VERIFIED' }, take: 1, orderBy: { recordedAt: 'desc' } },
+        consultation: { select: { id: true, diagnosis: true, completedAt: true } }
+      },
+      orderBy: [{ appointmentDate: 'desc' }, { startTime: 'asc' }]
+    });
+  },
+
+  async updateAppointmentStatus(doctorId, appointmentId, status, request) {
+    const appointment = await prisma.appointment.findUnique({
+      where: { id: appointmentId },
+      include: { patient: { select: { userId: true } } }
+    });
+    if (!appointment || appointment.doctorId !== doctorId) {
+      throw new AppError('Appointment not found or not assigned to you', 404);
+    }
+    const updated = await prisma.appointment.update({
+      where: { id: appointmentId },
+      data: {
+        status,
+        ...(status === 'COMPLETED' ? { completedAt: new Date() } : {}),
+        ...(status === 'IN_CONSULTATION' ? { consultationStartedAt: new Date() } : {})
+      },
+      include: {
+        patient: { select: { firstName: true, lastName: true } },
+        department: { select: { name: true } }
+      }
+    });
+
+    if (appointment.patient?.userId) {
+      await notificationService.create({
+        userId: appointment.patient.userId,
+        hospitalId: appointment.hospitalId,
+        title: 'Appointment Status Updated',
+        message: `Your appointment #${appointment.appointmentNumber} status has been updated to ${status.replaceAll('_', ' ')}.`,
+        type: 'APPOINTMENT'
+      }).catch(err => console.error('[doctorService] Patient notification error:', err.message));
+    }
+
+    return updated;
+  },
+
   async dailyAppointments(doctorId, date = new Date()) { const start=new Date(date);start.setHours(0,0,0,0);const end=new Date(start);end.setDate(end.getDate()+1);const items=await prisma.appointment.findMany({where:{doctorId,appointmentDate:{gte:start,lt:end}},include:{patient:{select:{firstName:true,lastName:true}},department:{select:{id:true,name:true}}},orderBy:{startTime:'asc'}});return{items,counts:{total:items.length,confirmed:items.filter(x=>x.status==='CONFIRMED').length,waiting:items.filter(x=>x.status==='WAITING').length,inConsultation:items.filter(x=>x.status==='IN_CONSULTATION').length,completed:items.filter(x=>x.status==='COMPLETED').length}};},
   async reports(doctorId){const now=new Date(),today=new Date(now);today.setHours(0,0,0,0);const week=new Date(today);week.setDate(week.getDate()-6);const month=new Date(today.getFullYear(),today.getMonth(),1);const items=await prisma.appointment.findMany({where:{doctorId},include:{department:{select:{id:true,name:true}},consultation:{select:{followUpRequired:true}}}});const completedSince=date=>items.filter(x=>x.status==='COMPLETED'&&x.appointmentDate>=date).length;const statuses=Object.entries(items.reduce((m,x)=>{m[x.status]=(m[x.status]||0)+1;return m},{})).map(([status,count])=>({status,count}));const departments=Object.values(items.reduce((m,x)=>{m[x.departmentId]??={department:x.department.name,count:0};m[x.departmentId].count++;return m},{}));return{completedToday:completedSince(today),completedWeek:completedSince(week),completedMonth:completedSince(month),followUpCount:items.filter(x=>x.consultation?.followUpRequired).length,statuses,departments};},
   listByHospital: (hospitalId) => doctorRepository.findPublicByHospital(hospitalId),
