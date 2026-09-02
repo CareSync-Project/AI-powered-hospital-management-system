@@ -108,6 +108,15 @@ enum NotificationType {
   SYSTEM
   CONSULTATION
   REMINDER
+  ANNOUNCEMENT
+}
+
+enum AnnouncementAudience {
+  ALL
+  PATIENTS
+  DOCTORS
+  NURSES
+  STAFF
 }
 
 model User {
@@ -123,6 +132,7 @@ model User {
   doctorProfile           DoctorProfile?
   nurseProfile            NurseProfile?
   notifications           Notification[]
+  announcementsCreated    Announcement[]         @relation("AnnouncementCreatedBy")
   auditLogs               AuditLog[]
   recordedVitals          VitalRecord[]                @relation("VitalRecordedBy")
   authSessions            AuthSession[]
@@ -177,6 +187,7 @@ model Hospital {
   symptomAssessments  SymptomAssessment[]
   consultations       Consultation[]
   notifications       Notification[]
+  announcements       Announcement[]
   auditLogs           AuditLog[]
   createdAt           DateTime                @default(now())
   updatedAt           DateTime                @updatedAt
@@ -689,4 +700,19 @@ model AuditLog {
   @@index([hospitalId, createdAt])
   @@index([resourceType, resourceId])
   @@index([action, createdAt])
+}
+
+model Announcement {
+  id          String               @id @default(uuid()) @db.Uuid
+  hospitalId  String               @db.Uuid
+  createdById String               @db.Uuid
+  title       String
+  message     String
+  audience    AnnouncementAudience
+  sentCount   Int                  @default(0)
+  hospital    Hospital             @relation(fields: [hospitalId], references: [id], onDelete: Restrict)
+  createdBy   User                 @relation("AnnouncementCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  createdAt   DateTime             @default(now())
+
+  @@index([hospitalId, createdAt])
 }

@@ -48,6 +48,8 @@ services:
       - JWT_SECRET=super_secret_jwt_key_for_hospital_management_system_32chars
       - CLIENT_URL=http://localhost:5173
       - AI_SERVICE_URL=http://ai-service:8000
+      - GMAIL_USER=${GMAIL_USER:-}
+      - GMAIL_APP_PASSWORD=${GMAIL_APP_PASSWORD:-}
     depends_on:
       postgres:
         condition: service_healthy

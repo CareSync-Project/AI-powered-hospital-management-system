@@ -13,6 +13,8 @@ import { createDepartmentSchema } from '../validators/departmentValidators.js';
 import { departmentScheduleSchema } from '../validators/scheduleValidators.js';
 import { reviewCorrectionController } from '../controllers/reviewCorrectionController.js';
 import { bulkStaffSchema, nurseAppointmentSchema, nurseDepartmentSchema, reportQuerySchema } from '../validators/reviewCorrectionValidators.js';
+import { announcementController } from '../controllers/announcementController.js';
+import { createAnnouncementSchema } from '../validators/announcementValidators.js';
 
 const router = Router();
 router.use(authenticate, requireRole('ADMIN'));
@@ -38,4 +40,6 @@ router.get('/appointments', validate({ query: reportQuerySchema }), asyncHandler
 router.get('/analytics', asyncHandler(reviewCorrectionController.analytics));
 router.get('/reports', validate({ query: reportQuerySchema }), asyncHandler(reviewCorrectionController.report));
 router.post('/staff/bulk-import', validate({ body: bulkStaffSchema }), asyncHandler(reviewCorrectionController.bulk));
+router.get('/announcements', asyncHandler(announcementController.list));
+router.post('/announcements', validate({ body: createAnnouncementSchema }), asyncHandler(announcementController.create));
 export default router;
