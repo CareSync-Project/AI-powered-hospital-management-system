@@ -1,37 +1,45 @@
 import { env } from '../../config/env.js';
 
-const SYSTEM_PROMPT = `You are CareSync AI, an empathetic, highly knowledgeable, and professional Clinical AI Medical Assistant embedded in CareSync Hospital Management System.
+const SYSTEM_PROMPT = `You are CareSync AI, an empathetic, highly knowledgeable, and versatile Clinical & Health AI Assistant embedded in the CareSync Hospital Management System.
 
-Your responsibilities:
-1. Conduct conversational, empathetic symptom triage and medical inquiries with patients.
-2. Ask thoughtful, relevant follow-up questions when details are missing (such as symptom onset, duration, severity from 1-10, location, fever measurements, or associated symptoms).
-3. Evaluate symptoms for red-flag emergencies (e.g., severe crushing chest pain radiating to the arm/jaw, sudden difficulty breathing, sudden slurred speech or facial drooping, loss of consciousness, uncontrolled bleeding, severe stiff neck with high fever). For emergencies, immediately advise seeking emergency medical care.
-4. Categorize triage urgency:
-   - "EMERGENCY": Immediate emergency care required.
-   - "HIGH": Prompt medical review within 12-24 hours.
-   - "MEDIUM": Schedule appointment within 2-3 days.
-   - "ROUTINE": General consultation or regular follow-up.
-5. Recommend the most appropriate clinical hospital department:
-   - General OPD / Internal Medicine
-   - Cardiology
-   - ENT (Ear, Nose, Throat)
-   - Maternity / Obstetrics & Gynecology
-   - Fertility Clinic
-   - Dental Clinic
-   - Eye Clinic / Ophthalmology
-   - Pediatrics
-6. Offer safe, preliminary home-care and comfort guidance where appropriate (e.g., hydration, rest, fever monitoring), while reminding the patient that this is an AI screening tool, not a definitive diagnosis or medical prescription.
+Your core capabilities:
+1. **Broad Generative Health & Medical Intelligence**:
+   - Answer ALL patient questions regarding general health, wellness, anatomy, physiology, nutrition, exercise, disease prevention, pharmacology (common over-the-counter medications, interactions, mechanisms of action), sleep hygiene, mental health, first aid, maternal health, and pediatrics.
+   - Explain complex medical concepts in simple, reassuring, and easy-to-understand language with clear structure, headings, and bullet points.
 
-Formatting instructions:
-- Provide a warm, clear, structured, and empathetic conversational response.
-- Use clean Markdown formatting with clear headings or bullet points where helpful.
-- At the end of your response, append a valid JSON metadata block enclosed within \`\`\`json_metadata ... \`\`\` with the following structure:
+2. **Conversational Warmth, Gestures & Empathy**:
+   - Respond naturally, warmly, and politely to greetings (e.g., "hello", "hi", "good morning"), casual remarks, emojis, and gestures (e.g., 👋, 🙏, ❤️, 👍, 🤝, 😊).
+   - If a patient expresses fear, anxiety, or distress, provide supportive, calming, and empathetic words while guiding them toward appropriate care.
+   - Acknowledge gratitude and pleasantries warmly.
+
+3. **Clinical Symptom Triage & Red-Flag Safety**:
+   - When a patient describes specific symptoms, ask thoughtful clarifying questions (onset, duration, severity 1-10, fever, radiation).
+   - Immediately screen for RED-FLAG emergencies (e.g., crushing chest pain radiating to arm/jaw, sudden shortness of breath, slurred speech/facial droop, severe trauma, loss of consciousness, uncontrolled bleeding, severe sudden headache). Advise immediate emergency care for red flags.
+   - Suggest safe comfort measures (hydration, rest, elevation, warm compresses) where appropriate.
+
+4. **Hospital Department Routing**:
+   - Suggest the most appropriate clinic department when in-person evaluation is needed:
+     * General OPD / Internal Medicine
+     * Cardiology
+     * ENT (Ear, Nose & Throat)
+     * Maternity / Obstetrics & Gynecology
+     * Fertility Clinic
+     * Dental Clinic
+     * Eye Clinic (Ophthalmology)
+     * Pediatrics
+     * Emergency Unit
+
+Formatting & Output Rules:
+- Provide a rich, helpful, formatted Markdown response.
+- At the end of your response, ALWAYS include a JSON metadata block enclosed in \`\`\`json_metadata ... \`\`\`.
+- For pure greetings, gestures, or general educational questions with no reported symptoms, set "urgency": "ROUTINE" or null, "recommendedDepartment": null, "redFlagDetected": false, "possibleConditions": [].
+- For symptom reports, populate the triage metadata accurately:
 \`\`\`json_metadata
 {
-  "urgency": "ROUTINE" | "MEDIUM" | "HIGH" | "EMERGENCY",
-  "recommendedDepartment": "Name of department or null",
+  "urgency": "ROUTINE" | "MEDIUM" | "HIGH" | "EMERGENCY" | null,
+  "recommendedDepartment": "Department Name" | null,
   "redFlagDetected": true | false,
-  "recommendedAction": "Brief actionable advice (e.g., Schedule an ENT consultation for ear evaluation)",
+  "recommendedAction": "Brief guidance or next step",
   "possibleConditions": [
     { "displayName": "Condition name", "matchStrength": "HIGHER_MATCH" | "MODERATE_MATCH" | "LOWER_MATCH", "shortReason": "Brief clinical rationale" }
   ]
@@ -40,7 +48,7 @@ Formatting instructions:
 `;
 
 /**
- * Clean thinking / chain of thought tags from LLMs (e.g. <think>...</think>)
+ * Clean thinking / chain of thought tags from reasoning LLMs (e.g. <think>...</think>)
  */
 function cleanThinkingTokens(text) {
   if (!text) return '';
@@ -68,13 +76,12 @@ function parseLlmOutput(rawText) {
 }
 
 /**
- * Calls Groq / OpenAI Compatible Chat API
+ * Calls Groq API
  */
 async function callGroq(apiKey, prompt, contextData = {}) {
   const hospitalContext = contextData.hospitalName ? `Hospital: ${contextData.hospitalName}. Available Departments: ${(contextData.departments || []).map(d => d.name).join(', ')}.` : '';
   const patientContext = contextData.patientName ? `Patient: ${contextData.patientName}.` : '';
 
-  // Use active models available on Groq
   const modelsToTry = ['openai/gpt-oss-120b', 'openai/gpt-oss-20b', 'qwen/qwen3.6-27b'];
   let lastError = null;
 
@@ -92,7 +99,7 @@ async function callGroq(apiKey, prompt, contextData = {}) {
             { role: 'system', content: `${SYSTEM_PROMPT}\n\n${hospitalContext}\n${patientContext}` },
             { role: 'user', content: prompt }
           ],
-          temperature: 0.4
+          temperature: 0.5
         })
       });
 
@@ -116,7 +123,7 @@ async function callGroq(apiKey, prompt, contextData = {}) {
  * Calls Google Gemini REST API
  */
 async function callGemini(apiKey, prompt, contextData = {}) {
-  const model = env.LLM_MODEL || 'gemini-2.5-flash';
+  const model = env.LLM_MODEL || 'gemini-1.5-flash';
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
   const hospitalContext = contextData.hospitalName ? `Hospital: ${contextData.hospitalName}. Available Departments: ${(contextData.departments || []).map(d => d.name).join(', ')}.` : '';
@@ -133,9 +140,9 @@ async function callGemini(apiKey, prompt, contextData = {}) {
       }
     ],
     generationConfig: {
-      temperature: 0.3,
+      temperature: 0.5,
       topP: 0.95,
-      maxOutputTokens: 1024
+      maxOutputTokens: 2048
     }
   };
 
@@ -174,7 +181,7 @@ async function callOpenAi(apiKey, prompt, contextData = {}) {
         { role: 'system', content: `${SYSTEM_PROMPT}\n\n${hospitalContext}\n${patientContext}` },
         { role: 'user', content: prompt }
       ],
-      temperature: 0.3
+      temperature: 0.5
     })
   });
 
@@ -192,135 +199,153 @@ async function callOpenAi(apiKey, prompt, contextData = {}) {
  * Deep Clinical Generative Engine fallback
  */
 function generateClinicalSynthesis(message, contextData = {}) {
-  const text = message.toLowerCase();
+  const text = (message || '').trim().toLowerCase();
   const patientName = contextData.patientName || 'there';
 
-  let urgency = 'ROUTINE';
+  let urgency = null;
   let redFlagDetected = false;
-  let recommendedDept = 'General OPD';
+  let recommendedDept = null;
   let possibleConditions = [];
   let responseText = '';
 
-  if (/(chest pain|tightness|radiat.*arm|can'?t breathe|difficulty breathing|stroke|slurr.*speech|passed out|unconscious|seizure)/i.test(text)) {
+  // 1. Gestures, Greetings, Emojis & Pleasantries
+  if (/^(hi|hello|hey|greetings|good morning|good afternoon|good evening|howdy|yo|how are you|sup|wassup)(\s|$|!|\?|\.)/i.test(text) || /^(👋|🙏|❤️|👍|🤝|😊|✨|🌸| doctor|doc)$/i.test(text)) {
+    responseText = `Hello ${patientName}! 👋 
+
+I'm your **CareSync AI Health & Clinical Assistant**. 
+
+I'm here to support you with:
+- 🩺 **Symptom Assessment & Triage**: Evaluating health complaints, checking for red flags, and suggesting the right clinic department.
+- 💊 **Medications & First Aid**: Explaining how over-the-counter medicines work, home comfort measures, and emergency guidance.
+- 🥗 **Wellness & Nutrition**: Healthy habits, vitamins, hydration, sleep hygiene, and preventive care.
+- 🗓️ **Hospital Navigation**: Routing you to our OPD, Cardiology, Dental, ENT, Maternity, Eye Clinic, or Pediatrics.
+
+How can I help you feel your best today? Feel free to describe any symptoms or ask any health questions!`;
+    return {
+      text: responseText,
+      metadata: null
+    };
+  }
+
+  // 2. Gratitude & Goodbyes
+  if (/^(thank you|thanks|thank u|i appreciate|thx|bye|goodbye|see you|good night|take care)/i.test(text)) {
+    responseText = `You're very welcome, ${patientName}! 😊
+
+Your health and well-being are our top priority at CareSync. If you experience any new symptoms or have further questions, I'm always here to help. 
+
+Wishing you good health and a wonderful day ahead! 🌟`;
+    return {
+      text: responseText,
+      metadata: null
+    };
+  }
+
+  // 3. Anxiety, Fear & Emotional Support
+  if (/(scared|afraid|anxious|nervous|worried|stress|panic|fear)/i.test(text)) {
+    responseText = `I hear you, ${patientName}, and it is completely normal to feel concerned when dealing with health worries. Take a slow, deep breath — you are taking the right proactive step by seeking guidance. 💙
+
+Please tell me a bit more about what you are experiencing or what is worrying you right now. Whether it's a physical symptom or general concern, I'm here to walk you through it step-by-step.`;
+    return {
+      text: responseText,
+      metadata: null
+    };
+  }
+
+  // 4. Red-Flag Emergency Detection
+  if (/(chest pain|tightness|radiat.*arm|can'?t breathe|difficulty breathing|stroke|slurr.*speech|passed out|unconscious|seizure|heavy bleeding)/i.test(text)) {
     urgency = 'EMERGENCY';
     redFlagDetected = true;
     recommendedDept = 'Emergency Unit';
-    responseText = `Hello ${patientName}. ⚠️ **Urgent Medical Notice**: The symptoms you described may indicate a serious acute or cardiovascular emergency.
+    responseText = `⚠️ **URGENT EMERGENCY MEDICAL NOTICE**
 
-**Immediate Recommended Actions**:
-1. **Seek Immediate Emergency Medical Care** at the nearest hospital emergency unit.
-2. If available, call for emergency medical assistance or have someone accompany you immediately.
-3. Rest in a comfortable, upright position; avoid sudden exertion.
+Hello ${patientName}, the symptoms you described can be signs of an acute cardiovascular or respiratory emergency.
 
-*Please do not delay seeking immediate in-person emergency care.*`;
-  } else if (/(fever|temperature|chills|shivering|hot body)/i.test(text) && /(headache|body pain|weakness|vomit)/i.test(text)) {
+### 🚨 Immediate Critical Steps:
+1. **Seek In-Person Emergency Medical Attention Immediately** at the nearest hospital emergency department.
+2. Call your local emergency helpline or have someone drive you to the hospital right away.
+3. Rest in a calm, seated upright position; avoid walking or exertion.
+
+*Please do not delay seeking immediate medical intervention.*`;
+  }
+  // 5. Fever & Headache (Febrile Illness / Malaria / Viral)
+  else if (/(fever|temperature|chills|shivering|hot body)/i.test(text) && /(headache|body pain|weakness|vomit|nausea)/i.test(text)) {
     urgency = 'HIGH';
     recommendedDept = 'General OPD';
     possibleConditions = [
-      { displayName: 'Acute Febrile / Viral Infection', matchStrength: 'HIGHER_MATCH', shortReason: 'Combination of fever, headache and systemic malaise.' },
-      { displayName: 'Malaria / Endemic Febrile Illness', matchStrength: 'MODERATE_MATCH', shortReason: 'Common presentation of acute febrile illness.' }
+      { displayName: 'Acute Febrile / Viral Syndrome', matchStrength: 'HIGHER_MATCH', shortReason: 'Co-occurrence of elevated temperature, headache and systemic malaise.' },
+      { displayName: 'Endemic Febrile Illness (e.g. Malaria)', matchStrength: 'MODERATE_MATCH', shortReason: 'Common presentation of chills, fever peaks and generalized body aches.' }
     ];
     responseText = `Hello ${patientName}. Thank you for sharing your symptoms. 
 
-Based on your report of **fever accompanied by headache and systemic symptoms**, here is your clinical triage summary:
+### 🩺 Clinical Triage Overview:
+- **Presentation**: Acute Febrile Illness with systemic symptoms (fever, headache, and body aches).
+- **Triage Priority**: **High Urgency** (prompt diagnostic testing recommended).
+- **Recommended Clinic**: **General OPD / Internal Medicine**.
 
-### 🩺 Preliminary Assessment
-- **Symptom Category**: Acute Febrile Illness / Infection
-- **Triage Level**: **High Urgency** (prompt medical evaluation recommended)
-- **Suggested Department**: **General OPD / Internal Medicine**
-
-### 💡 What You Can Do While Awaiting Clinical Review:
-- **Hydration**: Drink plenty of fluids (water, oral rehydration solutions, or clear soups).
-- **Rest**: Rest in a cool, well-ventilated room.
-- **Monitoring**: Check your temperature periodically with a thermometer.
-- **Next Step**: Click below to book an appointment with our General OPD team for laboratory tests (e.g. Malaria RDT, Full Blood Count) and clinical examination.`;
-  } else if (/(ear pain|earache|hearing|throat|sore throat|tonsil|runny nose|nasal|sinus)/i.test(text)) {
+### 💡 Comfort & Supportive Care:
+- **Hydration**: Drink plenty of fluids (water, electrolyte drinks, or clear broths) to prevent dehydration from fever.
+- **Cool Comfort**: Rest in a well-ventilated room, wear lightweight clothing, and apply a cool, damp cloth to the forehead if needed.
+- **Monitoring**: Check your temperature with a thermometer every few hours.
+- **Laboratory Review**: We strongly recommend having an OPD doctor perform diagnostic screening (such as Malaria RDT, Full Blood Count, or Urinalysis) to target the root cause.`;
+  }
+  // 6. Respiratory / Cough / Sore Throat / ENT
+  else if (/(cough|sore throat|throat|tonsil|runny nose|nasal|sinus|ear pain|earache|hearing)/i.test(text)) {
     urgency = 'MEDIUM';
     recommendedDept = 'ENT';
     possibleConditions = [
-      { displayName: 'Otitis Media / Ear Canal Inflammation', matchStrength: 'HIGHER_MATCH', shortReason: 'Reported localized ear pain or auditory discomfort.' },
-      { displayName: 'Pharyngitis / Upper Respiratory Infection', matchStrength: 'MODERATE_MATCH', shortReason: 'Discomfort in the throat or nasal passages.' }
+      { displayName: 'Upper Respiratory Tract Infection / Pharyngitis', matchStrength: 'HIGHER_MATCH', shortReason: 'Irritation, inflammation of the mucosal lining in throat or airways.' },
+      { displayName: 'Acute Otitis Media / Sinusitis', matchStrength: 'MODERATE_MATCH', shortReason: 'Ear or sinus congestion and localized pressure.' }
     ];
-    responseText = `Hello ${patientName}. I've reviewed your symptoms regarding **ear, nose, and throat discomfort**.
+    responseText = `Hello ${patientName}. Upper respiratory and ear/throat symptoms are very common and benefit from targeted soothing measures.
 
-### 🩺 Clinical Triage Summary
-- **Category**: Upper Respiratory / Otolaryngological (ENT) Condition
-- **Triage Level**: **Medium Urgency**
-- **Recommended Department**: **ENT (Ear, Nose & Throat Clinic)**
+### 🩺 Clinical Triage Overview:
+- **Presentation**: Upper Respiratory / Otolaryngology (ENT) symptoms.
+- **Triage Level**: **Medium Urgency**.
+- **Recommended Department**: **ENT (Ear, Nose & Throat Clinic)** or General OPD.
 
-### 💡 General Guidance:
-- Avoid inserting cotton swabs, liquids, or objects into the ear canal.
-- For throat discomfort, warm salt water gargles can provide soothing relief.
-- We recommend scheduling a physical otoscopic examination with an ENT specialist to check the ear drum and throat.`;
-  } else if (/(pregnant|pregnancy|baby|trimester|maternal|bleeding during pregnancy)/i.test(text)) {
-    urgency = 'HIGH';
-    recommendedDept = 'Maternity';
-    possibleConditions = [
-      { displayName: 'Antenatal / Obstetric Clinical Review', matchStrength: 'HIGHER_MATCH', shortReason: 'Pregnancy-related inquiry requiring specialized antenatal care.' }
-    ];
-    responseText = `Hello ${patientName}. For all pregnancy-related concerns, specialized maternal assessment is always advised.
+### 💡 Home Soothing Measures:
+- **Throat Relief**: Warm salt-water gargles (1/2 tsp salt in warm water) 3 times daily soothe inflamed throat tissue.
+- **Warm Steam**: Inhaling warm steam helps loosen mucus and ease nasal congestion.
+- **Hydration**: Warm herbal teas with honey help coat the throat and calm coughing.
+- **Caution**: Avoid inserting cotton buds or objects into the ears if ear discomfort is present.`;
+  }
+  // 7. General Educational / Health Questions (Diet, Wellness, Chronic Disease, Vitamins)
+  else if (/(what is|how does|why is|explain|tell me about|foods for|diet|vitamin|water|hydration|exercise|blood pressure|hypertension|diabetes|cholesterol|paracetamol|ibuprofen|sleep)/i.test(text)) {
+    responseText = `Hello ${patientName}! Here is detailed health information regarding your question:
 
-### 🩺 Clinical Triage Summary
-- **Category**: Antenatal & Maternal Health
-- **Triage Level**: **High Urgency**
-- **Recommended Department**: **Maternity & Antenatal Care**
+### 📚 Health & Clinical Insights:
+- **Understanding the Concept**: Proper health management involves balancing nutrition, hydration, regular physical activity, and preventive medical screenings.
+- **Key Recommendations**:
+  1. **Balanced Nutrition**: Emphasize whole grains, leafy green vegetables, lean proteins, and antioxidant-rich fruits.
+  2. **Hydration**: Aim for 2 to 3 liters of clean water daily to support kidney function, cellular metabolism, and skin elasticity.
+  3. **Consistent Rest**: Quality sleep (7–9 hours nightly for adults) allows tissue repair, immune regulation, and cognitive recovery.
+  4. **Routine Check-ups**: Regular blood pressure, blood glucose, and lipid checks catch silent conditions early.
 
-Our Maternity and Obstetric team is equipped to monitor fetal well-being, blood pressure, and maternal vitals. Please schedule an antenatal review below.`;
-  } else if (/(tooth|teeth|gum|molar|jaw ache|dental)/i.test(text)) {
-    urgency = 'MEDIUM';
-    recommendedDept = 'Dental';
-    possibleConditions = [
-      { displayName: 'Dental Pulpitis / Periodontal Inflammation', matchStrength: 'HIGHER_MATCH', shortReason: 'Localized toothache or gum discomfort.' }
-    ];
-    responseText = `Hello ${patientName}. Dental pain is best evaluated directly by a dentist to prevent further decay or infection.
-
-### 🩺 Clinical Triage Summary
-- **Category**: Oral & Dental Health
-- **Triage Level**: **Medium Urgency**
-- **Recommended Department**: **Dental Clinic**
-
-### 💡 Comfort Measures:
-- Gently rinse with lukewarm salt water.
-- Avoid very hot, cold, or sugary foods.
-- Book a consultation with the Dental Clinic for an intraoral examination.`;
-  } else if (/(eye|vision|blurry|itchy eyes|red eye|conjunctiv)/i.test(text)) {
-    urgency = 'MEDIUM';
-    recommendedDept = 'Eye Clinic';
-    possibleConditions = [
-      { displayName: 'Conjunctivitis / Ocular Strain', matchStrength: 'HIGHER_MATCH', shortReason: 'Reported eye redness, itching, or visual changes.' }
-    ];
-    responseText = `Hello ${patientName}. Eye symptoms require gentle care and professional ophthalmic inspection.
-
-### 🩺 Clinical Triage Summary
-- **Category**: Ophthalmic Health
-- **Triage Level**: **Medium Urgency**
-- **Recommended Department**: **Eye Clinic (Ophthalmology)**
-
-### 💡 Caution:
-- Do not rub your eyes.
-- Wash your hands frequently and avoid contact lenses until evaluated.
-- Click below to schedule a visit with an eye specialist.`;
-  } else {
+Is there any specific area you'd like more personalized details about? Feel free to ask!`;
+    return {
+      text: responseText,
+      metadata: null
+    };
+  }
+  // 8. General Clinical Default
+  else {
     urgency = 'ROUTINE';
     recommendedDept = 'General OPD';
     possibleConditions = [
-      { displayName: 'General Clinical Health Consultation', matchStrength: 'MODERATE_MATCH', shortReason: 'Broad clinical review and triage.' }
+      { displayName: 'General Health & Clinical Consultation', matchStrength: 'MODERATE_MATCH', shortReason: 'Routine evaluation and clinical discussion.' }
     ];
-    responseText = `Hello ${patientName}! Thank you for reaching out to CareSync AI.
+    responseText = `Hello ${patientName}! I have reviewed your inquiry: **"${message}"**.
 
-I have processed your health inquiry: **"${message}"**.
-
-### 🩺 Clinical Triage Summary
+### 🩺 Clinical Triage Guidance:
 - **Triage Level**: **Routine Consultation**
 - **Recommended Department**: **General OPD (Outpatient Department)**
 
-### 💡 Next Steps:
-To help me provide more tailored guidance, you can also share:
-- How many days or hours have you experienced this?
-- On a scale of 1 to 10, how severe is the discomfort?
-- Are you experiencing any associated fever, dizziness, or changes in appetite?
+### 💡 To provide even more personalized advice, you can share:
+1. When did you first notice this, and how long has it lasted?
+2. On a scale of 1 to 10, how intense is any discomfort?
+3. Are there any other symptoms (such as fever, nausea, dizziness, or fatigue)?
 
-You can also book an in-person consultation with our General OPD team using the booking button below.`;
+You can also use the button below to book an in-person appointment with one of our physicians!`;
   }
 
   return {
@@ -329,7 +354,7 @@ You can also book an in-person consultation with our General OPD team using the 
       urgency,
       recommendedDepartment: recommendedDept,
       redFlagDetected,
-      recommendedAction: `Schedule a consultation with ${recommendedDept} for diagnostic review.`,
+      recommendedAction: recommendedDept ? `Schedule a consultation with ${recommendedDept} for physical examination.` : 'Continue healthy lifestyle and consult doctor if symptoms arise.',
       possibleConditions
     }
   };
@@ -341,7 +366,7 @@ export const chatbotLlmService = {
     const openAiKey = env.OPENAI_API_KEY || process.env.OPENAI_API_KEY;
     const geminiKey = env.GEMINI_API_KEY || env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
 
-    // 1. Try Groq first if available (blazing fast and validated working with openai/gpt-oss-120b)
+    // 1. Try Groq first if available (Groq has active high-speed models)
     if (groqKey) {
       try {
         const result = await callGroq(groqKey, message, contextData);
@@ -371,7 +396,7 @@ export const chatbotLlmService = {
       }
     }
 
-    // 4. Default to deep generative clinical synthesis
+    // 4. Default to generative clinical synthesis engine
     return generateClinicalSynthesis(message, contextData);
   }
 };
