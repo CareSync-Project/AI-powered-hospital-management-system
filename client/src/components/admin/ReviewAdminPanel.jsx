@@ -25,6 +25,30 @@ const parseCsv = text => {
   return lines.filter(Boolean).map(line => Object.fromEntries(line.split(',').map((value, index) => [keys[index], value.trim()])));
 };
 
+const audienceLabels = {
+  ALL: 'All Users (Patients & Staff)',
+  PATIENTS: 'Patients Only',
+  DOCTORS: 'Doctors Only',
+  NURSES: 'Nurses Only',
+  STAFF: 'All Medical Staff'
+};
+
+const audienceColors = {
+  ALL: '#004449',
+  PATIENTS: '#0284c7',
+  DOCTORS: '#7c3aed',
+  NURSES: '#d97706',
+  STAFF: '#059669'
+};
+
+const reportTypeLabels = {
+  daily: 'Daily Operational Summary Report',
+  weekly: 'Weekly Clinical Efficiency Report',
+  monthly: 'Monthly Executive Performance Report',
+  industry: 'Industry Standards & Compliance Report',
+  generalized: 'Generalized Hospital Master Report'
+};
+
 export default function ReviewAdminPanel({ section }) {
   const [data, setData] = useState(null);
   const [nurses, setNurses] = useState([]);
@@ -96,6 +120,8 @@ export default function ReviewAdminPanel({ section }) {
   };
 
   useEffect(() => {
+    setData(null);
+    setMessage('');
     load();
   }, [section]);
 

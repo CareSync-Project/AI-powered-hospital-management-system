@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Activity, CalendarDays, LogOut, Stethoscope, Clock, FileSpreadsheet, Bell, User, CheckCircle2, ChevronRight, AlertCircle, FileText, HeartPulse, Plus, Trash2, Search, Filter } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { clinicalWorkflowService } from '../services/clinicalWorkflowService';
+import { notificationService } from '../services/notificationService';
+import ErrorBoundary from '../components/common/ErrorBoundary';
 import { consultationService } from '../services/consultationService';
 import { doctorService } from '../services/doctorService';
 import VitalSummary from '../components/nurse/VitalSummary';
@@ -470,8 +472,10 @@ export default function DoctorDashboard() {
           </div>
         )}
 
-        {/* TAB 1: MY QUEUE (Clinical Workspace) */}
-        {activeTab === 'queue' && (
+        {/* TAB VIEWS WRAPPED IN ERROR BOUNDARY */}
+        <ErrorBoundary key={activeTab}>
+          {/* TAB 1: MY QUEUE (Clinical Workspace) */}
+          {activeTab === 'queue' && (
           <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: '1.75rem', alignItems: 'start' }}>
             {/* Worklist Sidebar */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -1284,6 +1288,7 @@ export default function DoctorDashboard() {
             </div>
           </div>
         )}
+        </ErrorBoundary>
       </main>
     </div>
   );

@@ -13,6 +13,11 @@ const environmentSchema = z.object({
   AI_SERVICE_URL: z.url().default('http://127.0.0.1:8000'),
   AI_SERVICE_TIMEOUT_MS: z.coerce.number().int().min(250).max(10000).default(2500),
   CARESYNC_HOSPITAL_CODE: z.string().min(2).default('VCTH-DEMO'),
+  GEMINI_API_KEY: z.string().optional(),
+  GOOGLE_API_KEY: z.string().optional(),
+  OPENAI_API_KEY: z.string().optional(),
+  GROQ_API_KEY: z.string().optional(),
+  LLM_MODEL: z.string().default('gemini-1.5-flash'),
 });
 
 const result = environmentSchema.safeParse(process.env);

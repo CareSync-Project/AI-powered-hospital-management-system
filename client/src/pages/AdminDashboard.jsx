@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { LogOut, Activity, ShieldPlus, Users, Database, LayoutDashboard, CheckCircle, FileSpreadsheet, Clock, Mail, Bell } from 'lucide-react';
 import Phase4Management from '../components/admin/Phase4Management';
 import ReviewAdminPanel from '../components/admin/ReviewAdminPanel';
+import ErrorBoundary from '../components/common/ErrorBoundary';
 import { adminReviewService } from '../services/adminReviewService';
 
 const AdminDashboard = () => {
@@ -198,12 +199,14 @@ const AdminDashboard = () => {
         )}
 
         {/* Tab content routing */}
-        {['departments', 'schedules'].includes(activeTab) && <Phase4Management section={activeTab} />}
-        {activeTab === 'staff'          && <ReviewAdminPanel section="staff" />}
-        {activeTab === 'analytics'      && <ReviewAdminPanel section="analytics" />}
-        {(activeTab === 'appointments' || activeTab === 'monitoring') && <ReviewAdminPanel section="appointments" />}
-        {activeTab === 'reports'        && <ReviewAdminPanel section="reports" />}
-        {activeTab === 'announcements'  && <ReviewAdminPanel section="announcements" />}
+        <ErrorBoundary key={activeTab}>
+          {['departments', 'schedules'].includes(activeTab) && <Phase4Management section={activeTab} />}
+          {activeTab === 'staff'          && <ReviewAdminPanel section="staff" />}
+          {activeTab === 'analytics'      && <ReviewAdminPanel section="analytics" />}
+          {(activeTab === 'appointments' || activeTab === 'monitoring') && <ReviewAdminPanel section="appointments" />}
+          {activeTab === 'reports'        && <ReviewAdminPanel section="reports" />}
+          {activeTab === 'announcements'  && <ReviewAdminPanel section="announcements" />}
+        </ErrorBoundary>
 
         {/* Overview KPI Cards */}
         {activeTab === 'overview' && (
