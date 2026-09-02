@@ -7,7 +7,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 const LandingPage = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [isLogin, setIsLogin] = useState(true);
-  const [role, setRole] = useState('patient'); // patient, doctor, admin
   const [showPassword, setShowPassword] = useState(false);
   
   const [formData, setFormData] = useState({
@@ -127,16 +126,16 @@ const LandingPage = () => {
                 <button 
                   className="btn hover-lift" 
                   style={{ padding: '1rem 2rem', fontSize: '1.125rem', backgroundColor: 'var(--color-secondary)', color: '#fff', border: '2px solid var(--color-secondary)' }}
-                  onClick={() => { setRole('patient'); setIsLogin(false); setShowAuthModal(true); }}
+                  onClick={() => { setIsLogin(false); setShowAuthModal(true); }}
                 >
                   Book Appointment <ArrowRight size={20} style={{ marginLeft: '0.5rem' }} />
                 </button>
                 <button 
                   className="btn hover-lift" 
                   style={{ padding: '1rem 2rem', fontSize: '1.125rem', backgroundColor: 'transparent', color: 'var(--color-primary)', border: '2px solid var(--color-primary)' }}
-                  onClick={() => { setRole('doctor'); setIsLogin(true); setShowAuthModal(true); }}
+                  onClick={() => { setIsLogin(true); setShowAuthModal(true); }}
                 >
-                  Doctor Portal
+                  Sign In
                 </button>
               </motion.div>
             </motion.div>
@@ -276,35 +275,8 @@ const LandingPage = () => {
               </button>
               
               <h2 style={{ marginBottom: '2rem', textAlign: 'center', fontSize: '1.75rem', color: 'var(--color-text-main)' }}>
-                {isLogin ? 'Sign in to CareSync' : role === 'patient' ? 'Create a patient account' : 'Staff registration is managed by hospitals'}
+                {isLogin ? 'Sign in to CareSync' : 'Create a patient account'}
               </h2>
-
-              <div style={{ display: 'flex', gap: '0.25rem', marginBottom: '2rem', padding: '0.25rem', background: 'rgba(0,0,0,0.2)', borderRadius: '100vh', border: '1px solid var(--glass-border)' }}>
-                {[
-                  { id: 'patient', label: 'Patient' },
-                  { id: 'doctor', label: 'Doctor' },
-                  { id: 'admin', label: 'Admin' }
-                ].map(r => (
-                  <button
-                    key={r.id}
-                    onClick={() => { setRole(r.id); setError(''); }}
-                    style={{
-                      flex: 1,
-                      padding: '0.75rem',
-                      border: 'none',
-                      borderRadius: '100vh',
-                      cursor: 'pointer',
-                      background: role === r.id ? 'var(--color-text-main)' : 'transparent',
-                      color: role === r.id ? 'var(--color-background)' : 'var(--color-text-main)',
-                      fontWeight: '600',
-                      fontSize: '0.875rem',
-                      transition: 'all 0.2s ease'
-                    }}
-                  >
-                    {r.label}
-                  </button>
-                ))}
-              </div>
 
               {error && (
                 <div style={{ padding: '1rem', backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#ff8a8a', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '12px', marginBottom: '1.5rem', fontSize: '0.875rem' }}>
@@ -313,7 +285,7 @@ const LandingPage = () => {
               )}
 
               <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                {!isLogin && role === 'patient' && <>
+                {!isLogin && <>
                   <div className="auth-form-grid">
                     <div><label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>First name</label><input type="text" name="firstName" required className="input-field" value={formData.firstName} onChange={handleInputChange} /></div>
                     <div><label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>Last name</label><input type="text" name="lastName" required className="input-field" value={formData.lastName} onChange={handleInputChange} /></div>
@@ -333,7 +305,7 @@ const LandingPage = () => {
                   <input type="email" name="email" required className="input-field" value={formData.email} onChange={handleInputChange} />
                 </div>
 
-                {!isLogin && role === 'patient' && <div><label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>Confirm password</label><input type={showPassword ? "text" : "password"} name="confirmPassword" required className="input-field" value={formData.confirmPassword} onChange={handleInputChange} /></div>}
+                {!isLogin && <div><label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>Confirm password</label><input type={showPassword ? "text" : "password"} name="confirmPassword" required className="input-field" value={formData.confirmPassword} onChange={handleInputChange} /></div>}
 
                 <div>
                   <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>Password</label>
@@ -346,7 +318,7 @@ const LandingPage = () => {
                 </div>
 
                 <button type="submit" className="btn hover-lift" style={{ width: '100%', marginTop: '1rem', padding: '1rem', backgroundColor: 'var(--color-secondary)', color: '#fff', border: 'none', fontSize: '1rem' }}>
-                  {isLogin ? 'Sign In' : role === 'patient' ? 'Create patient account' : 'Staff sign-up unavailable'}
+                  {isLogin ? 'Sign In' : 'Create patient account'}
                 </button>
               </form>
 

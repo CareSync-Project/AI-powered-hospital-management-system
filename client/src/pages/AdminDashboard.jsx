@@ -111,93 +111,173 @@ const AdminDashboard = () => {
 
   const [activeTab, setActiveTab] = useState('overview');
 
+  const navItems = [
+    { key: 'overview', label: 'AI Overview', icon: LayoutDashboard },
+    { key: 'departments', label: 'Departments', icon: Database },
+    { key: 'doctors', label: 'Doctors', icon: ShieldPlus },
+    { key: 'schedules', label: 'Schedules', icon: Clock },
+    { key: 'staff', label: 'Medical Staff', icon: Users },
+    { key: 'directory', label: 'Staff Directory', icon: Users },
+    { key: 'analytics', label: 'Analytics', icon: Activity },
+    { key: 'monitoring', label: 'Appointments', icon: Clock },
+    { key: 'reports', label: 'Reports', icon: FileSpreadsheet },
+    { key: 'requests', label: 'ID Requests', icon: Mail, badge: stats.pendingIdRequests },
+    { key: 'bulk-secure', label: 'Secure Import', icon: Upload },
+    { key: 'import', label: 'Bulk Import', icon: Upload }
+  ];
+
   return (
-    <div className="container" style={{ paddingTop: '2rem', paddingBottom: '4rem' }}>
-      <header style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', gap: '1rem' }}>
-        <h2 style={{ fontSize: '1.75rem', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <LayoutDashboard color="var(--color-primary)" size={28} />
-          {user.name} Control Panel
-        </h2>
-        <div className="header-actions" style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: '999px', fontSize: '0.875rem' }}>
-            <ShieldPlus size={16} color="var(--color-primary)" />
-            Hospital Admin
+    <div style={{ minHeight: '100vh', display: 'flex', backgroundColor: '#f8fafc' }}>
+      {/* Sidebar Navigation */}
+      <aside style={{
+        width: '260px',
+        backgroundColor: 'var(--color-background)',
+        borderRight: '1px solid rgba(255, 255, 255, 0.1)',
+        display: 'flex',
+        flexDirection: 'column',
+        padding: '1.5rem 1rem',
+        position: 'sticky',
+        top: 0,
+        height: '100vh',
+        boxSizing: 'border-box'
+      }}>
+        <div style={{ padding: '0 0.5rem 1.5rem 0.5rem', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', marginBottom: '1.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontWeight: '700', fontSize: '1.25rem', color: 'var(--color-primary)' }}>
+            <div style={{ background: 'var(--color-primary)', color: '#004449', padding: '0.4rem', borderRadius: '8px', display: 'flex', alignItems: 'center' }}>
+              <ShieldPlus size={20} />
+            </div>
+            CareSync Admin
           </div>
-          <button className="btn btn-outline hover-lift" onClick={logout} style={{ display: 'flex', gap: '0.5rem' }}>
+          <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', marginTop: '0.5rem' }}>
+            {user.name}
+          </div>
+        </div>
+
+        <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.35rem', overflowY: 'auto' }}>
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = activeTab === item.key;
+            return (
+              <button
+                key={item.key}
+                onClick={() => setActiveTab(item.key)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  width: '100%',
+                  padding: '0.75rem 1rem',
+                  borderRadius: '10px',
+                  border: 'none',
+                  background: isActive ? 'var(--color-primary)' : 'transparent',
+                  color: isActive ? '#004449' : 'var(--color-text-main)',
+                  fontWeight: isActive ? '700' : '500',
+                  fontSize: '0.875rem',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <Icon size={18} color={isActive ? '#004449' : 'var(--color-text-muted)'} />
+                  {item.label}
+                </div>
+                {item.badge > 0 && (
+                  <span style={{
+                    background: 'var(--color-error)',
+                    color: '#fff',
+                    fontSize: '0.7rem',
+                    padding: '0.15rem 0.45rem',
+                    borderRadius: '999px',
+                    fontWeight: 'bold'
+                  }}>
+                    {item.badge}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </nav>
+
+        <div style={{ paddingTop: '1rem', borderTop: '1px solid rgba(255, 255, 255, 0.1)', marginTop: 'auto' }}>
+          <button
+            className="btn hover-lift"
+            onClick={logout}
+            style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', padding: '0.75rem', backgroundColor: 'transparent', color: '#ff8a8a', border: '1px solid rgba(239, 68, 68, 0.3)' }}
+          >
             <LogOut size={16} /> Logout
           </button>
         </div>
-      </header>
+      </aside>
 
-      <div style={{ width: '100%', height: '140px', borderRadius: '16px', backgroundImage: 'url(/dashboard_banner_medical.jpg)', backgroundSize: 'cover', backgroundPosition: 'center', marginBottom: '2rem', position: 'relative', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to right, rgba(9, 9, 11, 0.9), rgba(9, 9, 11, 0.5))' }}></div>
-        <div style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', left: '3rem' }}>
-           <h3 style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>Hospital Overview</h3>
-           <p style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem' }}>Real-time facility capacity and AI allocation metrics.</p>
+      {/* Main Content Area (White Background) */}
+      <main style={{ flex: 1, padding: '2rem 3rem', overflowY: 'auto', backgroundColor: '#ffffff', color: '#0f172a' }}>
+        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+          <div>
+            <h2 style={{ fontSize: '1.75rem', letterSpacing: '-0.02em', textTransform: 'capitalize', color: '#0f172a' }}>
+              {activeTab.replace('-', ' ')}
+            </h2>
+            <p style={{ color: '#64748b', fontSize: '0.875rem', marginTop: '0.25rem' }}>
+              CareSync Hospital Administration Console
+            </p>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: '999px', fontSize: '0.875rem', color: '#0f172a', fontWeight: '500' }}>
+            <ShieldPlus size={16} color="#004449" />
+            Single-Hospital System
+          </div>
+        </header>
+
+        <div style={{ width: '100%', height: '120px', borderRadius: '16px', backgroundImage: 'url(/dashboard_banner_medical.jpg)', backgroundSize: 'cover', backgroundPosition: 'center', marginBottom: '2rem', position: 'relative', overflow: 'hidden' }}>
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to right, rgba(9, 9, 11, 0.9), rgba(9, 9, 11, 0.5))' }}></div>
+          <div style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', left: '2rem' }}>
+             <h3 style={{ fontSize: '1.25rem', marginBottom: '0.25rem' }}>Hospital Command Center</h3>
+             <p style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem' }}>Real-time facility management and clinical allocation metrics.</p>
+          </div>
         </div>
-      </div>
 
-      <div className="flex-wrap" style={{ gap: '1rem', marginBottom: '2rem', borderBottom: '1px solid var(--glass-border)', paddingBottom: '1rem' }}>
-        {['hospital', 'departments', 'doctors', 'schedules'].map((tab) => (
-          <button key={tab} onClick={() => setActiveTab(tab)} className={`btn ${activeTab === tab ? 'btn-primary' : ''}`} style={{ textTransform: 'capitalize' }}>{tab}</button>
-        ))}
-        <button onClick={() => setActiveTab('overview')} className={`btn ${activeTab === 'overview' ? 'btn-primary' : ''}`} style={{ background: activeTab === 'overview' ? 'var(--color-primary)' : 'transparent', color: activeTab === 'overview' ? 'white' : 'var(--color-text-muted)' }}>AI Overview</button>
-        <button onClick={() => setActiveTab('staff')} className={`btn ${activeTab === 'staff' ? 'btn-primary' : ''}`} style={{ background: activeTab === 'staff' ? 'var(--color-primary)' : 'transparent', color: activeTab === 'staff' ? 'white' : 'var(--color-text-muted)' }}>Medical Staff</button>
-        {[['directory','Staff Directory'],['analytics','Analytics'],['monitoring','Appointments'],['reports','Reports'],['bulk-secure','Secure Import']].map(([key,label])=><button key={key} onClick={()=>setActiveTab(key)} className={`btn ${activeTab===key?'btn-primary':''}`}>{label}</button>)}
-        <button onClick={() => setActiveTab('import')} className={`btn ${activeTab === 'import' ? 'btn-primary' : ''}`} style={{ background: activeTab === 'import' ? 'var(--color-primary)' : 'transparent', color: activeTab === 'import' ? 'white' : 'var(--color-text-muted)' }}>Bulk Import</button>
-        <button onClick={() => setActiveTab('requests')} className={`btn ${activeTab === 'requests' ? 'btn-primary' : ''}`} style={{ position: 'relative', background: activeTab === 'requests' ? 'var(--color-primary)' : 'transparent', color: activeTab === 'requests' ? 'white' : 'var(--color-text-muted)' }}>
-          ID Requests
-          {stats.pendingIdRequests > 0 && (
-            <span style={{ position: 'absolute', top: '-5px', right: '-5px', background: 'var(--color-error)', color: '#fff', fontSize: '0.7rem', padding: '0.1rem 0.4rem', borderRadius: '100vh', fontWeight: 'bold' }}>
-              {stats.pendingIdRequests}
-            </span>
-          )}
-        </button>
-      </div>
-
-      {['hospital', 'departments', 'doctors', 'schedules'].includes(activeTab) && <Phase4Management section={activeTab} />}
-      {activeTab==='directory'&&<ReviewAdminPanel section="staff"/>}
-      {activeTab==='analytics'&&<ReviewAdminPanel section="analytics"/>}
-      {activeTab==='monitoring'&&<ReviewAdminPanel section="appointments"/>}
-      {activeTab==='reports'&&<ReviewAdminPanel section="reports"/>}
-      {activeTab==='bulk-secure'&&<ReviewAdminPanel section="bulk"/>}
+        {['departments', 'doctors', 'schedules'].includes(activeTab) && <Phase4Management section={activeTab} />}
+        {activeTab==='directory'&&<ReviewAdminPanel section="staff"/>}
+        {activeTab==='analytics'&&<ReviewAdminPanel section="analytics"/>}
+        {activeTab==='monitoring'&&<ReviewAdminPanel section="appointments"/>}
+        {activeTab==='reports'&&<ReviewAdminPanel section="reports"/>}
+        {activeTab==='bulk-secure'&&<ReviewAdminPanel section="bulk"/>}
 
       {activeTab === 'overview' && (
         <>
           <div className="grid-4" style={{ marginBottom: '2rem' }}>
-            <div className="glass-panel" style={{ padding: '1.5rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem', color: 'var(--color-text-muted)' }}>
-                <Users size={18} /> Total Patients
+            <div className="glass-panel" style={{ padding: '1.5rem', backgroundColor: '#ffffff', color: '#004449' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem', color: '#005a60', fontWeight: '600' }}>
+                <Users size={18} color="#004449" /> Total Patients
               </div>
-              <div style={{ fontSize: '2.5rem', fontWeight: '700', lineHeight: 1 }}>{stats.totalPatients}</div>
+              <div style={{ fontSize: '2.5rem', fontWeight: '700', lineHeight: 1, color: '#004449' }}>{stats.totalPatients}</div>
             </div>
             
-            <div className="glass-panel" style={{ padding: '1.5rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem', color: 'var(--color-text-muted)' }}>
-                <ShieldPlus size={18} /> Active Doctors
+            <div className="glass-panel" style={{ padding: '1.5rem', backgroundColor: '#ffffff', color: '#004449' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem', color: '#005a60', fontWeight: '600' }}>
+                <ShieldPlus size={18} color="#004449" /> Active Doctors
               </div>
-              <div style={{ fontSize: '2.5rem', fontWeight: '700', lineHeight: 1 }}>{stats.totalDoctors}</div>
+              <div style={{ fontSize: '2.5rem', fontWeight: '700', lineHeight: 1, color: '#004449' }}>{stats.totalDoctors}</div>
             </div>
 
-            <div className="glass-panel" style={{ padding: '1.5rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem', color: 'var(--color-text-muted)' }}>
-                <Database size={18} /> Total Appts
+            <div className="glass-panel" style={{ padding: '1.5rem', backgroundColor: '#ffffff', color: '#004449' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem', color: '#005a60', fontWeight: '600' }}>
+                <Database size={18} color="#004449" /> Total Appts
               </div>
-              <div style={{ fontSize: '2.5rem', fontWeight: '700', lineHeight: 1 }}>{stats.totalAppointments}</div>
+              <div style={{ fontSize: '2.5rem', fontWeight: '700', lineHeight: 1, color: '#004449' }}>{stats.totalAppointments}</div>
             </div>
 
-            <div className="glass-panel" style={{ padding: '1.5rem', borderColor: 'rgba(59, 130, 246, 0.3)', background: 'linear-gradient(145deg, rgba(59, 130, 246, 0.05) 0%, transparent 100%)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem', color: 'var(--color-primary)' }}>
-                <Activity size={18} /> Queued Appts
+            <div className="glass-panel" style={{ padding: '1.5rem', backgroundColor: '#ffffff', color: '#004449', border: '1px solid #007A83' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem', color: '#004449', fontWeight: '600' }}>
+                <Activity size={18} color="#004449" /> Queued Appts
               </div>
-              <div style={{ fontSize: '2.5rem', fontWeight: '700', lineHeight: 1, color: 'var(--color-primary)' }}>{stats.activeAppointments}</div>
+              <div style={{ fontSize: '2.5rem', fontWeight: '700', lineHeight: 1, color: '#004449' }}>{stats.activeAppointments}</div>
             </div>
             
-            <div className="glass-panel" style={{ padding: '1.5rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem', color: 'var(--color-text-muted)' }}>
-                <Clock size={18} /> Avg Consult Time
+            <div className="glass-panel" style={{ padding: '1.5rem', backgroundColor: '#ffffff', color: '#004449' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem', color: '#005a60', fontWeight: '600' }}>
+                <Clock size={18} color="#004449" /> Avg Consult Time
               </div>
-              <div style={{ fontSize: '2.5rem', fontWeight: '700', lineHeight: 1 }}>{stats.avgConsultTime}<span style={{ fontSize: '1rem', fontWeight: 'normal', color: 'var(--color-text-muted)', marginLeft: '4px' }}>min</span></div>
+              <div style={{ fontSize: '2.5rem', fontWeight: '700', lineHeight: 1, color: '#004449' }}>{stats.avgConsultTime}<span style={{ fontSize: '1rem', fontWeight: 'normal', color: '#005a60', marginLeft: '4px' }}>min</span></div>
             </div>
           </div>
 
@@ -413,6 +493,7 @@ const AdminDashboard = () => {
           </div>
         </div>
       )}
+      </main>
     </div>
   );
 };

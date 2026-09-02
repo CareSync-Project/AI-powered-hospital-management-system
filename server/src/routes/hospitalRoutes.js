@@ -12,7 +12,6 @@ import { requireAdminHospitalAccess } from '../middleware/authorization.js';
 
 const router = Router();
 router.get('/', asyncHandler(hospitalController.list));
-router.post('/', authenticate, requireRole('ADMIN'), validate({ body: createHospitalSchema }), asyncHandler(hospitalController.create));
 router.get('/:id', validate({ params: idParamsSchema }), asyncHandler(hospitalController.get));
 router.patch('/:id', authenticate, requireRole('ADMIN'), validate({ params: idParamsSchema, body: updateHospitalSchema }), requireAdminHospitalAccess('id'), asyncHandler(hospitalController.update));
 router.get('/:hospitalId/departments', validate({ params: hospitalParamsSchema }), asyncHandler(departmentController.list));
