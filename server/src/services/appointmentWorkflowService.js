@@ -10,6 +10,10 @@ export const appointmentWorkflowService = {
     if (!appointment) throw new AppError('Appointment not found', 404);
     const hospitalId = actor.role === 'NURSE' ? actor.user.nurseProfile?.hospitalId : actor.role === 'ADMIN' ? actor.user.adminProfile?.hospitalId : null;
     if (hospitalId && hospitalId !== appointment.hospitalId) throw new AppError('Not authorized for this hospital', 403);
+    if (actor.role === 'NURSE') {
+      const assignment = await client.nurseAppointmentAssignment.findFirst({ where: { appointmentId, nurseId: actor.user.nurseProfile?.id, active: true }, select: { id: true } });
+      if (!assignment) throw new AppError('Only the nurse assigned to this appointment can perform this action', 403);
+    }
     if (actor.role === 'DOCTOR' && actor.user.doctorProfile?.id !== appointment.doctorId) throw new AppError('Doctor is not assigned to this appointment', 403);
     if (RULES[actor.role]?.[appointment.status] !== toStatus) throw new AppError(`Invalid appointment transition from ${appointment.status} to ${toStatus}`, 409);
     const timestamp = TIMESTAMPS[toStatus]; const now = new Date();

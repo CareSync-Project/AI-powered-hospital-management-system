@@ -1,7 +1,13 @@
 import { appointmentWorkflowService } from '../services/appointmentWorkflowService.js'; import { queueService } from '../services/queueService.js'; import { vitalService } from '../services/vitalService.js'; import { triageService } from '../services/triageService.js'; import { consultationService } from '../services/consultationService.js'; import { getPatientProfileId } from '../services/authorizationService.js'; import { AppError } from '../middleware/errorHandler.js';
+import { nurseAssistantService } from '../services/nurseAssistantService.js';
+import { nurseBookingService } from '../services/nurseBookingService.js';
 export const clinicalController={
- async nurseWorklist(req,res){res.json({success:true,data:await queueService.nurse(req.auth.user.nurseProfile.hospitalId)})},
- async nurseAssigned(req,res){const data=await import('../config/prisma.js').then(({default:prisma})=>prisma.appointment.findMany({where:{nurseAssignments:{some:{nurseId:req.auth.user.nurseProfile.id,active:true}}},include:{patient:{select:{id:true,firstName:true,lastName:true}},department:{select:{id:true,name:true}},doctor:{select:{id:true,firstName:true,lastName:true}},triageRecords:{take:1,orderBy:{createdAt:'desc'}},vitalRecords:{where:{verificationStatus:'VERIFIED'},take:1,orderBy:{recordedAt:'desc'}}},orderBy:[{appointmentDate:'asc'},{startTime:'asc'}]}));res.json({success:true,data})},
+ async nurseWorklist(req,res){res.json({success:true,data:await queueService.nurse(req.auth.user.nurseProfile.id)})},
+ async nurseAssigned(req,res){res.json({success:true,data:await queueService.nurseAssigned(req.auth.user.nurseProfile.id)})},
+ async nurseAssistant(req,res){res.json({success:true,data:await nurseAssistantService.respond(req.auth.user.nurseProfile.id,req.body.message)})},
+ async nurseBookingContext(req,res){res.json({success:true,data:await nurseBookingService.context(req.auth.user.nurseProfile)})},
+ async nurseBookingDoctors(req,res){res.json({success:true,data:await nurseBookingService.doctors(req.auth.user.nurseProfile,req.validatedQuery.patientId,req.validatedQuery.departmentId,req.validatedQuery.date)})},
+ async nurseBook(req,res){res.status(201).json({success:true,data:await nurseBookingService.book(req.auth.user.nurseProfile,req.auth.userId,req.body,req)})},
  async doctorQueue(req,res){res.json({success:true,data:await queueService.doctor(req.auth.user.doctorProfile.id)})},
  async checkIn(req,res){res.json({success:true,data:await appointmentWorkflowService.transition({appointmentId:req.params.id,actor:req.auth,toStatus:'CHECKED_IN',action:'APPOINTMENT_CHECKED_IN',request:req,notify:true})})},
  async vitals(req,res){res.json({success:true,data:await vitalService.listForAppointment(req.params.id,req.auth)})},

@@ -79,9 +79,9 @@ function App() {
                 } 
               />
 
-              <Route 
-                path="/access-denied" 
-                element={
+              <Route
+                path="/access-denied"
+                element={<ProtectedRoute>
                   <main style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', color: '#004449', padding: '2rem', textAlign: 'center' }}>
                     <div style={{ backgroundColor: '#ffffff', padding: '2.5rem 3rem', borderRadius: '16px', border: '1px solid #cbd5e1', boxShadow: '0 10px 25px rgba(0,0,0,0.05)', maxWidth: '500px' }}>
                       <h1 style={{ color: '#dc2626', fontSize: '1.75rem', marginBottom: '0.75rem' }}>Access Denied</h1>
@@ -93,7 +93,7 @@ function App() {
                       </a>
                     </div>
                   </main>
-                } 
+                </ProtectedRoute>}
               />
 
               <Route path="*" element={<Navigate to="/" replace />} />

@@ -33,6 +33,10 @@ export const vitalService = {
     const hospitalId = auth.user.nurseProfile?.hospitalId;
     const doctorId = auth.user.doctorProfile?.id;
     if ((auth.role === 'NURSE' && hospitalId !== appointment.hospitalId) || (auth.role === 'DOCTOR' && doctorId !== appointment.doctorId)) throw new AppError('Not authorized', 403);
+    if (auth.role === 'NURSE') {
+      const assignment = await prisma.nurseAppointmentAssignment.findFirst({ where: { appointmentId, nurseId: auth.user.nurseProfile.id, active: true }, select: { id: true } });
+      if (!assignment) throw new AppError('Only the nurse assigned to this appointment can view its vital records', 403);
+    }
     return (await prisma.vitalRecord.findMany({ where: { appointmentId }, orderBy: { recordedAt: 'desc' } })).map(serialize);
   },
   async createClinical(appointmentId, auth, data, request) {

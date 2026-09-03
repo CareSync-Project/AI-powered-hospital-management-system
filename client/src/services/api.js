@@ -2,6 +2,7 @@ const API_URL = (import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '');
 let accessToken = null;
 let refreshPromise = null;
 let authFailureHandler = () => {};
+const waitForNavigation = () => new Promise(() => {});
 
 export class ApiError extends Error {
   constructor(message, status, details) {
@@ -52,14 +53,20 @@ export async function apiRequest(path, options = {}, hasRetried = false) {
 
   if (!response.ok) {
     const isAuthEndpoint = path.startsWith('/auth/login') || path.startsWith('/auth/register') || path.startsWith('/auth/refresh');
-    if (response.status === 401 && !hasRetried && !isAuthEndpoint) {
-      try {
-        await refreshAccessToken();
-        return apiRequest(path, options, true);
-      } catch {
-        setAccessToken(null);
-        authFailureHandler();
+    if (response.status === 401 && !isAuthEndpoint) {
+      if (!hasRetried) {
+        try {
+          await refreshAccessToken();
+          return apiRequest(path, options, true);
+        } catch {
+          setAccessToken(null);
+          authFailureHandler();
+          return waitForNavigation();
+        }
       }
+      setAccessToken(null);
+      authFailureHandler();
+      return waitForNavigation();
     }
     throw new ApiError(
       payload?.message || `Request failed with status ${response.status}`,

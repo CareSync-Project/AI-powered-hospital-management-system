@@ -36,7 +36,10 @@ export const AuthProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    setAuthFailureHandler(clearAuth);
+    setAuthFailureHandler(() => {
+      clearAuth();
+      if (window.location.pathname !== '/') window.location.replace('/');
+    });
     authService.refreshSession().then(applyResponse).catch(clearAuth).finally(() => setIsLoading(false));
     return () => setAuthFailureHandler(() => {});
   }, []);

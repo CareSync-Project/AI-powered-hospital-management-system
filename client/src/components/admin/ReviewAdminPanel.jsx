@@ -1153,18 +1153,22 @@ export default function ReviewAdminPanel({ section }) {
                     </span>
 
                     <select 
-                      defaultValue="" 
+                      value={item.nurseAssignments?.[0]?.nurse?.id || ''}
                       style={{ padding: '0.35rem 0.6rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.8rem' }}
                       onChange={async e => {
+                        const currentNurseId = item.nurseAssignments?.[0]?.nurse?.id;
                         if (e.target.value) {
                           await adminReviewService.assignNurseAppointment(item.id, e.target.value);
-                          setMessage('Nurse assigned to appointment.');
-                          load();
+                          setMessage('Nurse assigned to patient appointment.');
+                        } else if (currentNurseId) {
+                          await adminReviewService.assignNurseAppointment(item.id, currentNurseId, false);
+                          setMessage('Nurse unassigned from patient appointment.');
                         }
+                        load();
                       }}
                     >
-                      <option value="">Assign nurse</option>
-                      {nurses.map(n => <option key={n.id} value={n.id}>{n.firstName} {n.lastName}</option>)}
+                      <option value="">Unassigned</option>
+                      {nurses.filter(n => n.user?.active && n.departments?.some(d => d.active && d.department.id === item.department?.id)).map(n => <option key={n.id} value={n.id}>{n.firstName} {n.lastName}</option>)}
                     </select>
                   </div>
                 </div>

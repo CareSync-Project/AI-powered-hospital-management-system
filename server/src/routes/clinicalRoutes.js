@@ -3,13 +3,17 @@ import { clinicalController as controller } from '../controllers/clinicalControl
 import { authenticate, requireAnyRole, requireRole } from '../middleware/authenticate.js';
 import { validate } from '../middleware/validate.js';
 import { idParamsSchema } from '../validators/commonValidators.js';
-import { clinicalVitalSchema, triageSchema, consultationDraftSchema, consultationCompleteSchema } from '../validators/clinicalValidators.js';
+import { clinicalVitalSchema, triageSchema, consultationDraftSchema, consultationCompleteSchema, clinicalAssistantSchema, nurseBookingQuerySchema, nurseBookingSchema } from '../validators/clinicalValidators.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { symptomAssessmentController } from '../controllers/symptomAssessmentController.js';
 const router=Router();router.use(authenticate);
 router.get('/nurse/appointments/today',requireRole('NURSE'),asyncHandler(controller.nurseWorklist));
 router.get('/nurse/assigned-patients',requireRole('NURSE'),asyncHandler(controller.nurseAssigned));
 router.get('/nurse/queue',requireRole('NURSE'),asyncHandler(controller.nurseWorklist));
+router.post('/nurse/care-assistant/message',requireRole('NURSE'),validate({body:clinicalAssistantSchema}),asyncHandler(controller.nurseAssistant));
+router.get('/nurse/booking/context',requireRole('NURSE'),asyncHandler(controller.nurseBookingContext));
+router.get('/nurse/booking/doctors',requireRole('NURSE'),validate({query:nurseBookingQuerySchema}),asyncHandler(controller.nurseBookingDoctors));
+router.post('/nurse/appointments',requireRole('NURSE'),validate({body:nurseBookingSchema}),asyncHandler(controller.nurseBook));
 router.patch('/appointments/:id/check-in',requireAnyRole('NURSE','ADMIN'),validate({params:idParamsSchema}),asyncHandler(controller.checkIn));
 router.get('/appointments/:id/vitals',requireAnyRole('NURSE','DOCTOR'),validate({params:idParamsSchema}),asyncHandler(controller.vitals));
 router.post('/appointments/:id/vitals',requireRole('NURSE'),validate({params:idParamsSchema,body:clinicalVitalSchema}),asyncHandler(controller.recordVitals));

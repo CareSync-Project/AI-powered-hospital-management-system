@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Activity, ClipboardList, LogOut, RefreshCw, Stethoscope, Bell, CheckCircle2, X } from 'lucide-react';
+import { Activity, CalendarDays, CalendarPlus, ClipboardList, LogOut, Mail, MapPin, Phone, RefreshCw, ShieldCheck, Stethoscope, Bell, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { clinicalWorkflowService } from '../services/clinicalWorkflowService';
 import { vitalService } from '../services/vitalService';
@@ -10,6 +10,8 @@ import VitalSummary from '../components/nurse/VitalSummary';
 import TriageForm from '../components/nurse/TriageForm';
 import UrgencyBadge from '../components/nurse/UrgencyBadge';
 import ClinicalAssessmentSummary from '../components/symptoms/ClinicalAssessmentSummary';
+import NurseCareAssistant from '../components/nurse/NurseCareAssistant';
+import NurseBookingPanel from '../components/nurse/NurseBookingPanel';
 import '../clinical.css';
 
 export default function NurseDashboard() {
@@ -20,6 +22,8 @@ export default function NurseDashboard() {
   const [filter, setFilter] = useState('ALL');
   const [view, setView] = useState('TODAY');
   const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
+  const [activePage, setActivePage] = useState('patients');
 
   // Notifications state
   const [notifications, setNotifications] = useState([]);
@@ -38,6 +42,7 @@ export default function NurseDashboard() {
   };
 
   const load = () => {
+    setError('');
     (view === 'ASSIGNED' ? clinicalWorkflowService.nurseAssigned() : clinicalWorkflowService.nurseWorklist())
       .then(r => setItems(r.data))
       .catch(e => setError(e.message));
@@ -52,6 +57,8 @@ export default function NurseDashboard() {
 
   const open = async item => {
     setSelected(item);
+    setError('');
+    setMessage('');
     try {
       setVitals((await vitalService.appointment(item.id)).data);
     } catch (e) {
@@ -62,9 +69,10 @@ export default function NurseDashboard() {
   const action = async fn => {
     try {
       await fn();
-      const refreshed = (await clinicalWorkflowService.nurseWorklist()).data;
+      const refreshed = (await (view === 'ASSIGNED' ? clinicalWorkflowService.nurseAssigned() : clinicalWorkflowService.nurseWorklist())).data;
       setItems(refreshed);
       if (selected) setSelected(refreshed.find(x => x.id === selected.id) || null);
+      setMessage('Patient workflow updated successfully.');
     } catch (e) {
       setError(e.message);
     }
@@ -72,19 +80,38 @@ export default function NurseDashboard() {
 
   const visible = items.filter(x => filter === 'ALL' || x.status === filter);
   const count = status => items.filter(x => x.status === status).length;
+  const age = value => {
+    if (!value) return 'Not provided';
+    const birth = new Date(value), now = new Date();
+    let years = now.getFullYear() - birth.getFullYear();
+    if (now < new Date(now.getFullYear(), birth.getMonth(), birth.getDate())) years -= 1;
+    return `${years} years`;
+  };
+  const formatDate = value => value ? new Date(value).toLocaleDateString(undefined, { year:'numeric', month:'short', day:'numeric' }) : 'Not scheduled';
 
   return (
-    <div className="clinical-app">
+    <div className="clinical-app nurse-dashboard-shell">
+      <aside className="nurse-sidebar">
+        <div className="nurse-brand"><span><Stethoscope size={21}/></span><div>CareSync<small>NURSE PORTAL</small></div></div>
+        <nav>
+          <button className={activePage === 'patients' && view === 'TODAY' ? 'active' : ''} onClick={() => {setActivePage('patients');setView('TODAY')}}><CalendarDays size={18}/>Assigned Today{view === 'TODAY' && items.length > 0 && <b>{items.length}</b>}</button>
+          <button className={activePage === 'patients' && view === 'ASSIGNED' ? 'active' : ''} onClick={() => {setActivePage('patients');setView('ASSIGNED')}}><ClipboardList size={18}/>My Assigned Patients{view === 'ASSIGNED' && items.length > 0 && <b>{items.length}</b>}</button>
+          <button className={activePage === 'booking' ? 'active' : ''} onClick={() => setActivePage('booking')}><CalendarPlus size={18}/>Book Appointment</button>
+          <button className={activePage === 'announcements' ? 'active' : ''} onClick={() => setActivePage('announcements')}><Bell size={18}/>Announcements{unreadCount > 0 && <b>{unreadCount}</b>}</button>
+        </nav>
+        <div className="nurse-sidebar-profile"><span>{(user?.name || 'N').charAt(0).toUpperCase()}</span><div><strong>{user?.name || 'Nurse'}</strong><small>{user?.email}</small></div></div>
+        <button className="nurse-logout" onClick={logout}><LogOut size={17}/>Sign out</button>
+      </aside>
       <header className="clinical-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
           <small>Hospital clinical workflow</small>
-          <h1><Stethoscope /> Nurse/Triage Dashboard</h1>
+            <h1><Stethoscope /> {activePage === 'announcements' ? 'Announcements' : activePage === 'booking' ? 'Book Appointment' : 'Nurse/Triage Dashboard'}</h1>
           <p>{user?.name || 'Nurse'} · {user?.email}</p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           {/* Notification Bell Button */}
           <button
-            onClick={() => setShowNotifModal(true)}
+            onClick={() => setActivePage('announcements')}
             style={{
               position: 'relative', background: '#ffffff', border: '1px solid #cbd5e1',
               padding: '0.6rem', borderRadius: '50%', cursor: 'pointer', display: 'flex',
@@ -105,33 +132,33 @@ export default function NurseDashboard() {
           </button>
 
           <button onClick={load}><RefreshCw />Refresh</button>
-          <button onClick={logout}><LogOut />Logout</button>
         </div>
       </header>
 
       <main className="clinical-layout">
+        {activePage === 'patients' && <>
         <aside>
           <div className="clinical-metrics">
-            <span>Today<b>{items.length}</b></span>
+            <span>{view === 'TODAY' ? 'Assigned today' : 'All assigned'}<b>{items.length}</b></span>
             <span>Checked in<b>{count('CHECKED_IN')}</b></span>
             <span>Waiting<b>{count('WAITING')}</b></span>
             <span>Emergency/High<b>{items.filter(x => ['EMERGENCY','HIGH'].includes(x.triageRecords?.[0]?.urgencyLevel)).length}</b></span>
           </div>
 
           <div className="clinical-filters">
-            <button className={view==='TODAY'?'active':''} onClick={()=>setView('TODAY')}>Today's Patients</button>
-            <button className={view==='ASSIGNED'?'active':''} onClick={()=>setView('ASSIGNED')}>My Assigned Patients</button>
             {['ALL','CONFIRMED','CHECKED_IN','TRIAGED','WAITING'].map(x => (
               <button className={filter === x ? 'active' : ''} key={x} onClick={() => setFilter(x)}>{x.replace('_',' ')}</button>
             ))}
           </div>
 
           <div className="worklist">
+            {visible.length === 0 && <p className="worklist-empty">No assigned patients match this view.</p>}
             {visible.map(x => (
               <button key={x.id} className={selected?.id === x.id ? 'selected' : ''} onClick={() => open(x)}>
                 <div>
                   <strong>{x.patient.firstName} {x.patient.lastName}</strong>
                   <small>{x.appointmentNumber} · {x.department.name}</small>
+                  <small>{formatDate(x.appointmentDate)} · {x.startTime || 'Time pending'}</small>
                   <small>Dr. {x.doctor.firstName} {x.doctor.lastName}</small>
                 </div>
                 <div>
@@ -145,6 +172,7 @@ export default function NurseDashboard() {
 
         <section className="clinical-panel">
           {error && <p className="clinical-error">{error}</p>}
+          {message && <p className="clinical-success">{message}</p>}
           {!selected ? (
             <div className="clinical-empty">
               <ClipboardList />
@@ -162,6 +190,17 @@ export default function NurseDashboard() {
                 <UrgencyBadge level={selected.triageRecords?.[0]?.urgencyLevel}/>
               </div>
 
+              <div className="patient-details-grid">
+                <div><span>Patient ID</span><strong>{selected.patient.hospitalRecords?.find(x => x.hospitalId === selected.hospitalId)?.hospitalPatientNumber || 'Not issued'}</strong></div>
+                <div><span>Date of birth / age</span><strong>{formatDate(selected.patient.dateOfBirth)} · {age(selected.patient.dateOfBirth)}</strong></div>
+                <div><span>Gender</span><strong>{selected.patient.gender?.replaceAll('_', ' ') || 'Not provided'}</strong></div>
+                <div><Mail size={16}/><span>Email</span><strong>{selected.patient.user?.email || 'Not provided'}</strong></div>
+                <div><Phone size={16}/><span>Phone</span><strong>{selected.patient.phone || 'Not provided'}</strong></div>
+                <div><MapPin size={16}/><span>Address</span><strong>{[selected.patient.address, selected.patient.city, selected.patient.region].filter(Boolean).join(', ') || 'Not provided'}</strong></div>
+                <div><ShieldCheck size={16}/><span>Emergency contact</span><strong>{selected.patient.emergencyContactName || 'Not provided'}{selected.patient.emergencyContactPhone ? ` · ${selected.patient.emergencyContactPhone}` : ''}</strong></div>
+                <div><CalendarDays size={16}/><span>Assigned visit</span><strong>{formatDate(selected.appointmentDate)} · {selected.startTime || 'Time pending'}</strong></div>
+              </div>
+
               <ClinicalAssessmentSummary assessment={selected.symptomAssessments?.[0]} audience="nurse" />
 
               {selected.status === 'CONFIRMED' && (
@@ -171,19 +210,19 @@ export default function NurseDashboard() {
               {['CHECKED_IN','TRIAGED','WAITING'].includes(selected.status) && (
                 <>
                   <h3><Activity/> Vital records</h3>
-                  <VitalSummary vital={vitals[0]}/>
-                  {vitals[0]?.source === 'PATIENT' && vitals[0]?.verificationStatus === 'UNVERIFIED' && (
-                    <button onClick={async () => {
-                      await vitalService.verify(vitals[0].id);
-                      setVitals((await vitalService.appointment(selected.id)).data);
-                    }}>
-                      Verify reviewed patient entry
-                    </button>
-                  )}
+                  <div className="vital-history">
+                    {vitals.length === 0 ? <p>No vitals recorded for this appointment.</p> : vitals.map(vital => (
+                      <div key={vital.id} className="vital-history-item">
+                        <small>{new Date(vital.recordedAt).toLocaleString()}</small>
+                        <VitalSummary vital={vital}/>
+                      </div>
+                    ))}
+                  </div>
                   {selected.status === 'CHECKED_IN' && (
                     <VitalEntryForm onSubmit={async data => {
                       await vitalService.record(selected.id, data);
                       setVitals((await vitalService.appointment(selected.id)).data);
+                      setMessage('Verified vitals recorded successfully.');
                     }}/>
                   )}
                 </>
@@ -206,6 +245,12 @@ export default function NurseDashboard() {
             </>
           )}
         </section>
+        </>}
+        {activePage === 'booking' && <section className="clinical-panel nurse-full-page"><NurseBookingPanel onBooked={load}/></section>}
+        {activePage === 'announcements' && <section className="clinical-panel nurse-full-page nurse-announcements">
+          <div className="panel-heading"><div><h2>Announcements & Notifications</h2><p>Hospital updates and workflow notifications for your account.</p></div>{unreadCount>0&&<button onClick={async()=>{await notificationService.markAllRead();await loadNotifications()}}>Mark all as read</button>}</div>
+          {notifications.length===0?<div className="clinical-empty"><Bell/><h3>No announcements</h3><p>You have no notifications at this time.</p></div>:<div className="nurse-notification-list">{notifications.map(notif=><article key={notif.id} className={notif.read?'':'unread'}><div><h3>{notif.title}</h3><p>{notif.message}</p><small>{new Date(notif.createdAt).toLocaleString()}</small></div>{!notif.read&&<button onClick={async()=>{await notificationService.markRead(notif.id);await loadNotifications()}}>Mark read</button>}</article>)}</div>}
+        </section>}
       </main>
 
       {/* Notifications Modal for Nurse */}
@@ -281,6 +326,7 @@ export default function NurseDashboard() {
           </div>
         </div>
       )}
+      <NurseCareAssistant />
     </div>
   );
 }
