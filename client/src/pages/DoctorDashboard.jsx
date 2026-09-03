@@ -349,7 +349,7 @@ export default function DoctorDashboard() {
             Doctor Portal
           </div>
           <div style={{ fontSize: '0.85rem', color: 'var(--color-text-main)', marginTop: '0.6rem', fontWeight: '600' }}>
-            Dr. {profile?.firstName || user?.name || ''} {profile?.lastName || ''}
+            Dr. {user?.name || 'Practitioner'}
           </div>
           <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginTop: '0.15rem' }}>
             {profile?.specialization || 'Medical Practitioner'}

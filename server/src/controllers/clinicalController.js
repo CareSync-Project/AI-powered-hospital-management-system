@@ -1,5 +1,4 @@
 import { appointmentWorkflowService } from '../services/appointmentWorkflowService.js'; import { queueService } from '../services/queueService.js'; import { vitalService } from '../services/vitalService.js'; import { triageService } from '../services/triageService.js'; import { consultationService } from '../services/consultationService.js'; import { getPatientProfileId } from '../services/authorizationService.js'; import { AppError } from '../middleware/errorHandler.js';
-import { careSyncHospitalService } from '../services/careSyncHospitalService.js';
 export const clinicalController={
  async nurseWorklist(req,res){res.json({success:true,data:await queueService.nurse(req.auth.user.nurseProfile.hospitalId)})},
  async nurseAssigned(req,res){const data=await import('../config/prisma.js').then(({default:prisma})=>prisma.appointment.findMany({where:{nurseAssignments:{some:{nurseId:req.auth.user.nurseProfile.id,active:true}}},include:{patient:{select:{id:true,firstName:true,lastName:true}},department:{select:{id:true,name:true}},doctor:{select:{id:true,firstName:true,lastName:true}},triageRecords:{take:1,orderBy:{createdAt:'desc'}},vitalRecords:{where:{verificationStatus:'VERIFIED'},take:1,orderBy:{recordedAt:'desc'}}},orderBy:[{appointmentDate:'asc'},{startTime:'asc'}]}));res.json({success:true,data})},
@@ -15,7 +14,6 @@ export const clinicalController={
  async save(req,res){res.json({success:true,data:await consultationService.save(req.params.id,req.auth.user.doctorProfile,req.body,req)})},
  async complete(req,res){res.json({success:true,data:await consultationService.complete(req.params.id,req.auth.user.doctorProfile,req.body,req)})},
  async patientVitals(req,res){res.json({success:true,data:await vitalService.list(getPatientProfileId(req.auth))})},
- async patientVitalCreate(req,res){const hospital=await careSyncHospitalService.get();res.status(201).json({success:true,data:await vitalService.create(getPatientProfileId(req.auth),{...req.body,hospitalId:hospital.id,source:'PATIENT',verificationStatus:'UNVERIFIED',recordedByUserId:req.auth.userId})})},
  async progress(req,res){const item=await import('../config/prisma.js').then(m=>m.default.appointment.findFirst({where:{id:req.params.id,patientId:getPatientProfileId(req.auth)},select:{id:true,status:true,checkedInAt:true,triagedAt:true,consultationStartedAt:true,completedAt:true}}));if(!item)throw new AppError('Appointment not found',404);res.json({success:true,data:item})},
  async patientConsultation(req,res){res.json({success:true,data:await consultationService.patientSummary(req.params.id,getPatientProfileId(req.auth))})},
 };

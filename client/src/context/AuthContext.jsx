@@ -19,10 +19,16 @@ export const AuthProvider = ({ children }) => {
     if (data.accessToken) setAccessToken(data.accessToken);
     const profile = data.profile || null;
     const hospitalContext = data.hospitalContext || [];
+    const firstName = profile?.firstName || '';
+    const lastName = profile?.lastName || '';
+    const name = [firstName, lastName].filter(Boolean).join(' ') || data.user.email;
     const displayUser = {
       ...data.user,
       profile,
-      name: profile ? [profile.firstName, profile.lastName].filter(Boolean).join(' ') : data.user.email,
+      firstName,
+      lastName,
+      name,
+      initials: [firstName, lastName].filter(Boolean).map((part) => part[0]).join('').toUpperCase() || data.user.role?.[0] || 'U',
       hospitalId: hospitalContext[0]?.hospitalId || null,
     };
     setAuth({ user: displayUser, profile, hospitalContext });

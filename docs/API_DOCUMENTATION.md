@@ -19,7 +19,7 @@
 | `PATCH .../:id/start` | Doctor | Start consultation |
 | `PATCH .../:id/consultation` | Doctor | Save draft |
 | `PATCH .../:id/complete` | Doctor | Complete consultation |
-| `GET/POST /patient/vitals` | Patient | Own records/preliminary entry |
+| `GET /patient/vitals` | Patient | Read own nurse-recorded vital history |
 | `GET /patient/appointments/:id/progress` | Patient | Own progress |
 | `GET /patient/consultations/:id` | Patient | Own finalized summary |
 
@@ -138,7 +138,6 @@ Common errors are `400` invalid relationships/input, `404` missing resource, `40
 | `GET /appointments/:id` | Relationship-scoped appointment | Authenticated owner/assignee/hospital staff | `200` appointment | `403`, `404` |
 | `POST /appointments` | Transactional appointment foundation | PATIENT identity derived or own-hospital staff flow | `201` appointment | `403`, `409` capacity/concurrency |
 | `GET /patients/:patientId/vitals` | Relationship-scoped vitals | Authenticated | `200` array | `403`, `404` |
-| `POST /patients/:patientId/vitals` | Patient stores own unverified measurements | Authenticated PATIENT owner | `201` vital record | `403`, `404`; performs no diagnosis |
 
 ## Request bodies
 
@@ -184,7 +183,7 @@ Appointment creation:
 
 The service validates all patient/hospital/department/doctor/assignment/card/slot relationships. Slot count increment and appointment creation share a serializable transaction.
 
-Patient vitals accept optional positive measurements plus required `hospitalId` and optional `appointmentId`/`recordedAt`. The API forces `source=PATIENT`, `verificationStatus=UNVERIFIED`, and the authenticated recorder. BMI is calculated only when both weight and height are present.
+Clinical vitals accept bounded measurements through the assigned-nurse appointment endpoint. The API derives the patient, hospital, appointment, recorder, `source=NURSE`, and `verificationStatus=VERIFIED`. BMI is calculated only when both weight and height are present. Patients can read these records but cannot submit or edit them.
 
 ## Phase 7 symptom-assessment endpoints
 

@@ -79,7 +79,7 @@ export default function NurseDashboard() {
         <div>
           <small>Hospital clinical workflow</small>
           <h1><Stethoscope /> Nurse/Triage Dashboard</h1>
-          <p>{user?.email}</p>
+          <p>{user?.name || 'Nurse'} · {user?.email}</p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           {/* Notification Bell Button */}

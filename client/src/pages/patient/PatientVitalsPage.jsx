@@ -2,21 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { vitalService } from '../../services/vitalService';
 import VitalSummary from '../../components/nurse/VitalSummary';
 
-const fields = [
-  ['temperature', 'Temperature °C'],
-  ['systolicBP', 'Systolic BP mmHg'],
-  ['diastolicBP', 'Diastolic BP mmHg'],
-  ['heartRate', 'Heart rate bpm'],
-  ['oxygenSaturation', 'SpO2 %'],
-  ['respiratoryRate', 'Respiratory rate breaths/min'],
-  ['weight', 'Weight kg'],
-  ['height', 'Height cm'],
-  ['bloodGlucose', 'Blood glucose mmol/L']
-];
-
 export default function PatientVitalsPage() {
   const [items, setItems] = useState([]);
-  const [form, setForm] = useState({});
   const [message, setMessage] = useState('');
 
   const load = () => {
@@ -30,44 +17,15 @@ export default function PatientVitalsPage() {
 
   useEffect(load, []);
 
-  const submit = async (event) => {
-    event.preventDefault();
-    if (!navigator.onLine) return setMessage('Vital submission requires a secure network connection.');
-    try {
-      const payload = Object.fromEntries(
-        Object.entries(form).filter(([, value]) => value !== '').map(([key, value]) => [key, Number(value)])
-      );
-      await vitalService.submitPatient(payload);
-      setMessage('Preliminary vital record saved as patient-entered and unverified.');
-      setForm({});
-      load();
-    } catch (error) {
-      setMessage(error.message);
-    }
-  };
-
-  const safeItems = Array.isArray(items) ? items : [];
+  const safeItems = Array.isArray(items)
+    ? items.filter((item) => item.source === 'NURSE' && item.verificationStatus === 'VERIFIED')
+    : [];
 
   return (
     <section className="patient-panel">
       <h2>My Clinical Vitals</h2>
-      <p>Readings are recorded for CareSync Hospital. Patient-entered values remain unverified unless a clinician explicitly reviews them.</p>
-      {message && <p role="status" className="patient-error" style={{ backgroundColor: '#e0f2fe', color: '#0369a1' }}>{message}</p>}
-
-      <form className="patient-form vital-grid" onSubmit={submit}>
-        {fields.map(([key, label]) => (
-          <label key={key}>
-            {label}
-            <input
-              type="number"
-              step="any"
-              value={form[key] ?? ''}
-              onChange={(event) => setForm({ ...form, [key]: event.target.value })}
-            />
-          </label>
-        ))}
-        <button type="submit">Save Preliminary Vitals</button>
-      </form>
+      <p>Your verified readings are recorded by the nurse assigned to your appointment and displayed here for your review.</p>
+      {message && <p role="status" className="patient-error">{message}</p>}
 
       <div className="appointment-list" style={{ marginTop: '2rem' }}>
         {safeItems.map((item) => (
@@ -75,9 +33,7 @@ export default function PatientVitalsPage() {
             <div>
               <strong>{new Date(item.recordedAt).toLocaleString()}</strong>
               <p>
-                {item.source === 'PATIENT'
-                  ? 'Patient-entered — not clinically verified unless marked verified'
-                  : `${item.source} recorded`}
+                Recorded and verified by nursing staff
               </p>
               <VitalSummary vital={item} />
             </div>
@@ -86,7 +42,7 @@ export default function PatientVitalsPage() {
       </div>
 
       {!safeItems.length && (
-        <p style={{ color: '#64748b', marginTop: '1rem' }}>No vital records recorded yet.</p>
+        <p style={{ color: '#64748b', marginTop: '1rem' }}>No nurse-recorded vital signs are available yet.</p>
       )}
     </section>
   );

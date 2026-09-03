@@ -12,7 +12,7 @@ router.get('/nurse/assigned-patients',requireRole('NURSE'),asyncHandler(controll
 router.get('/nurse/queue',requireRole('NURSE'),asyncHandler(controller.nurseWorklist));
 router.patch('/appointments/:id/check-in',requireAnyRole('NURSE','ADMIN'),validate({params:idParamsSchema}),asyncHandler(controller.checkIn));
 router.get('/appointments/:id/vitals',requireAnyRole('NURSE','DOCTOR'),validate({params:idParamsSchema}),asyncHandler(controller.vitals));
-router.post('/appointments/:id/vitals',requireAnyRole('NURSE','DOCTOR'),validate({params:idParamsSchema,body:clinicalVitalSchema}),asyncHandler(controller.recordVitals));
+router.post('/appointments/:id/vitals',requireRole('NURSE'),validate({params:idParamsSchema,body:clinicalVitalSchema}),asyncHandler(controller.recordVitals));
 router.patch('/vitals/:id/verify',requireRole('NURSE'),validate({params:idParamsSchema}),asyncHandler(controller.verifyVital));
 router.post('/appointments/:id/triage',requireRole('NURSE'),validate({params:idParamsSchema,body:triageSchema}),asyncHandler(controller.triage));
 router.patch('/appointments/:id/waiting',requireRole('NURSE'),validate({params:idParamsSchema}),asyncHandler(controller.waiting));

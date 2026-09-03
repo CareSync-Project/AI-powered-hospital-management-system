@@ -6,7 +6,6 @@ import { validate } from '../middleware/validate.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { idParamsSchema, patientParamsSchema } from '../validators/commonValidators.js';
 import { createPatientCardSchema, verifyPatientCardSchema } from '../validators/patientCardValidators.js';
-import { createVitalSchema } from '../validators/vitalValidators.js';
 import { authenticate, requireRole } from '../middleware/authenticate.js';
 import { requirePatientOwnership, requirePatientRecordAccess } from '../middleware/authorization.js';
 
@@ -16,7 +15,6 @@ patientRouter.get('/:id', validate({ params: idParamsSchema }), requirePatientRe
 patientRouter.get('/:patientId/cards', validate({ params: patientParamsSchema }), requirePatientOwnership('patientId'), asyncHandler(patientCardController.list));
 patientRouter.post('/:patientId/cards', requireRole('PATIENT'), validate({ params: patientParamsSchema, body: createPatientCardSchema }), requirePatientOwnership('patientId'), asyncHandler(patientCardController.create));
 patientRouter.get('/:patientId/vitals', validate({ params: patientParamsSchema }), requirePatientRecordAccess, asyncHandler(vitalController.list));
-patientRouter.post('/:patientId/vitals', requireRole('PATIENT'), validate({ params: patientParamsSchema, body: createVitalSchema.omit({ source: true, verificationStatus: true, recordedByUserId: true }) }), requirePatientOwnership('patientId'), asyncHandler(vitalController.create));
 
 export const patientCardRouter = Router();
 patientCardRouter.patch('/:id/verification', authenticate, requireRole('ADMIN'), validate({ params: idParamsSchema, body: verifyPatientCardSchema }), asyncHandler(patientCardController.verify));

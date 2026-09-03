@@ -7,7 +7,7 @@ CareSync is single-hospital. Final roles are `ADMIN`, `DOCTOR`, `NURSE`, and `PA
 | Capability | Patient | Nurse | Doctor | Admin |
 |---|---:|---:|---:|---:|
 | View vitals | Own | Hospital workflow | Assigned care | No general clinical access |
-| Submit preliminary vitals | Own/unverified | — | — | No |
+| Submit vitals | No | Assigned appointment | No | No |
 | Record verified vitals | No | Own hospital | Assigned patient | No |
 | Check in | No | Own hospital | No | Own hospital operationally |
 | Create triage | No | Own hospital | No | No |
@@ -27,7 +27,7 @@ Frontend guards improve navigation only. Express middleware, authenticated profi
 | Create patient appointment | Own identity derived | No Phase 3 flow | Staff-assisted, own hospital | Staff-assisted, own hospital |
 | Submit patient card | Own | No | No | No |
 | Verify patient card | No | No | No | Own hospital only |
-| Submit patient-entered vitals | Own; forced unverified | No Phase 3 flow | Phase 6 | Phase 6 |
+| Submit clinical vitals | No | No | Assigned nurse only | No |
 | Manage departments/schedules | No | No | No | Own hospital only |
 | Create staff account | No | No | No | Own hospital only |
 
