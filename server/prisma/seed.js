@@ -1,9 +1,15 @@
 import bcrypt from 'bcrypt';
 import prisma from '../src/config/prisma.js';
 
-if (process.env.NODE_ENV === 'production') throw new Error('Development seed data must not be loaded in production.');
+const productionSeedAllowed = process.env.ALLOW_DEMO_SEED === 'true';
+if (process.env.NODE_ENV === 'production' && !productionSeedAllowed) {
+  throw new Error('Demo seed data is disabled in production. Set ALLOW_DEMO_SEED=true for a one-time intentional seed.');
+}
 
-const DEMO_PASSWORD = 'DemoOnly!ChangeMe2026';
+const DEMO_PASSWORD = process.env.DEMO_SEED_PASSWORD || 'DemoOnly!ChangeMe2026';
+if (process.env.NODE_ENV === 'production' && !process.env.DEMO_SEED_PASSWORD) {
+  throw new Error('DEMO_SEED_PASSWORD must be set when intentionally seeding production.');
+}
 const atTime = (hours, minutes = 0) => new Date(Date.UTC(1970, 0, 1, hours, minutes));
 const onDate = (isoDate) => new Date(`${isoDate}T00:00:00.000Z`);
 
