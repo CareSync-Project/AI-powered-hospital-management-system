@@ -1,0 +1,14 @@
+.git
+.github
+.agents
+.codex
+.env
+.env.*
+**/node_modules
+**/dist
+**/coverage
+**/.venv
+**/__pycache__
+docs
+*.docx
+*.log
