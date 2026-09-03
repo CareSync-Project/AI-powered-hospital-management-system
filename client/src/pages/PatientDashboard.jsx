@@ -5,7 +5,6 @@ import { appointmentService } from '../services/appointmentService';
 import { notificationService } from '../services/notificationService';
 import ErrorBoundary from '../components/common/ErrorBoundary';
 import MobileBottomNavigation from '../components/patient/MobileBottomNavigation';
-import OfflineBanner from '../components/patient/OfflineBanner';
 import InstallPwaPrompt from '../components/patient/InstallPwaPrompt';
 import CareAssistant from '../components/patient/CareAssistant';
 import BookAppointmentPage from './patient/BookAppointmentPage';
@@ -276,7 +275,6 @@ export default function PatientDashboard() {
   return (
     <div className="patient-shell" style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#f8fafc' }}>
       <InstallPwaPrompt />
-      <OfflineBanner />
 
       {/* Left Sidebar Navigation */}
       <aside style={{

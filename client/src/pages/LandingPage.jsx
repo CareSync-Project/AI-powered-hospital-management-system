@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Stethoscope, User, ArrowRight, X, Eye, EyeOff, Activity, ShieldCheck, HeartPulse, MessageCircle, Send } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import InstallPwaPrompt from '../components/patient/InstallPwaPrompt';
 
 const formatFormError = (error) => {
   if (!Array.isArray(error?.details) || error.details.length === 0) {
@@ -330,6 +331,7 @@ const LandingPage = () => {
                 <button type="submit" className="btn hover-lift" style={{ width: '100%', marginTop: '1rem', padding: '1rem', backgroundColor: 'var(--color-secondary)', color: '#fff', border: 'none', fontSize: '1rem' }}>
                   {isLogin ? 'Sign In' : 'Create patient account'}
                 </button>
+                {isLogin && <InstallPwaPrompt className="landing-install-button" />}
               </form>
 
               <p style={{ textAlign: 'center', marginTop: '2rem', fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>

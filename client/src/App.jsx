@@ -8,6 +8,7 @@ import PatientDashboard from './pages/PatientDashboard';
 import DoctorDashboard from './pages/DoctorDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import NurseDashboard from './pages/NurseDashboard';
+import OfflineBanner from './components/patient/OfflineBanner';
 import './index.css';
 import './patient.css';
 
@@ -39,6 +40,7 @@ function App() {
     <ErrorBoundary>
       <AuthProvider>
         <NotificationProvider>
+          <OfflineBanner />
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<LandingPage />} />
