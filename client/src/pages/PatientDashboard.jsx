@@ -5,7 +5,6 @@ import { appointmentService } from '../services/appointmentService';
 import { notificationService } from '../services/notificationService';
 import ErrorBoundary from '../components/common/ErrorBoundary';
 import MobileBottomNavigation from '../components/patient/MobileBottomNavigation';
-import InstallPwaPrompt from '../components/patient/InstallPwaPrompt';
 import CareAssistant from '../components/patient/CareAssistant';
 import BookAppointmentPage from './patient/BookAppointmentPage';
 import AppointmentsPage from './patient/AppointmentsPage';
@@ -274,10 +273,8 @@ export default function PatientDashboard() {
 
   return (
     <div className="patient-shell" style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#f8fafc' }}>
-      <InstallPwaPrompt />
-
       {/* Left Sidebar Navigation */}
-      <aside style={{
+      <aside className="patient-dashboard-sidebar" style={{
         width: '260px',
         backgroundColor: '#004449',
         color: '#ffffff',
@@ -432,7 +429,7 @@ export default function PatientDashboard() {
       </aside>
 
       {/* Main Content Workspace */}
-      <main style={{
+      <main className="patient-dashboard-main" style={{
         flex: 1,
         padding: tab === 'symptoms' ? '1.25rem 2rem' : '2rem 3rem',
         overflowY: 'auto',
@@ -441,7 +438,7 @@ export default function PatientDashboard() {
         display: 'flex',
         flexDirection: 'column'
       }}>
-        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: tab === 'symptoms' ? '1rem' : '2rem' }}>
+        <header className="patient-dashboard-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: tab === 'symptoms' ? '1rem' : '2rem' }}>
           <div>
             <h2 style={{ fontSize: '1.75rem', letterSpacing: '-0.02em', textTransform: 'capitalize', color: '#0f172a', margin: 0 }}>
               {NAV.find(x => x[0] === tab)?.[2] || 'Patient Portal'}
