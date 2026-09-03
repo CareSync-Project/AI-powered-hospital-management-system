@@ -13,6 +13,7 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
     "seed": "prisma db seed",
+    "admin:create": "node scripts/createAdmin.js",
     "test": "vitest run",
     "test:watch": "vitest"
   },
