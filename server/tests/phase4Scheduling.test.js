@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { assertValidScheduleRange, buildSlotCandidates, hasDepartmentScheduleConflict, hasDoctorScheduleConflict, isDoctorScheduleWithinDepartmentHours } from '../src/services/scheduleService.js';
+import { appointmentAffectedByException, assertValidScheduleRange, buildSlotCandidates, hasDepartmentScheduleConflict, hasDoctorScheduleConflict, isDoctorScheduleWithinDepartmentHours } from '../src/services/scheduleService.js';
 import { departmentScheduleSchema, doctorScheduleSchema, scheduleExceptionSchema, generateSlotsSchema, slotDateQuerySchema, updateDepartmentScheduleSchema, updateDoctorScheduleSchema } from '../src/validators/scheduleValidators.js';
 import { createDoctorAccountSchema, updateDoctorProfileSchema } from '../src/validators/staffValidators.js';
 import { requireMatchingHospital } from '../src/services/authorizationService.js';
@@ -43,4 +43,15 @@ describe('Phase 4 scheduling engine', () => {
   test('inactive department hours do not authorize doctor schedules', () => expect(isDoctorScheduleWithinDepartmentHours(work,[{active:false,startTime:at(8),endTime:at(14)}])).toBe(false));
   test('slot capacity defaults are represented as one per generated candidate', () => expect(buildSlotCandidates([work]).every(item=>item.schedule===work)).toBe(true));
   test('non-overlapping sessions are not reported as conflicts', () => expect(hasDepartmentScheduleConflict([])).toBe(false));
+  test('partial doctor unavailability affects only overlapping appointments', () => {
+    const exception = { exceptionType: 'UNAVAILABLE', startTime: at(10), endTime: at(11) };
+    expect(appointmentAffectedByException({ startTime: at(9), endTime: at(10) }, exception)).toBe(false);
+    expect(appointmentAffectedByException({ startTime: at(10, 30), endTime: at(11) }, exception)).toBe(true);
+  });
+  test.each(['LEAVE', 'HOLIDAY'])('%s affects every appointment that day', (exceptionType) => expect(appointmentAffectedByException({ startTime: at(9), endTime: at(10) }, { exceptionType })).toBe(true));
+  test('custom hours affect appointments outside the replacement period', () => {
+    const exception = { exceptionType: 'CUSTOM_HOURS', startTime: at(10), endTime: at(14) };
+    expect(appointmentAffectedByException({ startTime: at(10), endTime: at(11) }, exception)).toBe(false);
+    expect(appointmentAffectedByException({ startTime: at(9), endTime: at(10) }, exception)).toBe(true);
+  });
 });

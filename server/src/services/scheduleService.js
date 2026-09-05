@@ -4,11 +4,51 @@ import { validateDoctorDepartmentContext } from './doctorService.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { timeToDate, validateTimeRange } from '../utils/time.js';
 import prisma from '../config/prisma.js';
+import { emailService } from './emailService.js';
 
 const DAYS = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
 const minutes = (value) => value.getUTCHours() * 60 + value.getUTCMinutes();
 const timeAt = (value) => new Date(Date.UTC(1970, 0, 1, Math.floor(value / 60), value % 60));
 const dateAt = (value) => new Date(`${value}T00:00:00.000Z`);
+const ACTIVE_APPOINTMENT_STATUSES = ['PENDING', 'CONFIRMED', 'CHECKED_IN', 'TRIAGED', 'WAITING', 'IN_CONSULTATION'];
+
+export function appointmentAffectedByException(appointment, exception) {
+  if (['LEAVE', 'HOLIDAY'].includes(exception.exceptionType)) return true;
+  if (exception.exceptionType === 'UNAVAILABLE') {
+    if (!exception.startTime || !exception.endTime) return true;
+    return minutes(appointment.startTime) < minutes(exception.endTime)
+      && minutes(appointment.endTime) > minutes(exception.startTime);
+  }
+  if (exception.exceptionType === 'CUSTOM_HOURS') {
+    return minutes(appointment.startTime) < minutes(exception.startTime)
+      || minutes(appointment.endTime) > minutes(exception.endTime);
+  }
+  return false;
+}
+
+const formatDate = (date) => new Intl.DateTimeFormat('en-GH', { dateStyle: 'long', timeZone: 'UTC' }).format(date);
+const formatTime = (date) => new Intl.DateTimeFormat('en-GH', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'UTC' }).format(date);
+
+function exceptionMessage(appointment, exception, doctorName) {
+  const period = exception.startTime && exception.endTime
+    ? ` between ${formatTime(exception.startTime)} and ${formatTime(exception.endTime)}`
+    : '';
+  const reason = exception.reason ? ` Reason: ${exception.reason}` : '';
+  return `Dr. ${doctorName} is unavailable on ${formatDate(exception.date)}${period}. Your appointment ${appointment.appointmentNumber} is affected. Please contact CareSync or check your appointments for rescheduling.${reason}`;
+}
+
+async function sendScheduleExceptionEmails(recipients, hospitalName) {
+  await Promise.all(recipients.map(({ email, name, message }) => emailService.send({
+    to: email,
+    subject: 'Important update about your CareSync appointment',
+    text: message,
+    html: emailService.announcementHtml({
+      title: 'Doctor availability update',
+      message,
+      hospitalName,
+    }).replace('{{NAME}}', name),
+  })));
+}
 
 export function assertValidScheduleRange(startTime, endTime) {
   if (!validateTimeRange(startTime, endTime)) throw new AppError('Schedule start time must be before end time', 400);
@@ -99,9 +139,30 @@ export const scheduleService = {
     const affiliation = await prisma.doctorHospital.findUnique({ where: { doctorId_hospitalId: { doctorId, hospitalId } } });
     if (!affiliation?.active) throw new AppError('Doctor is not affiliated with this hospital', 403);
     const converted = { doctorId, hospitalId, date: dateAt(data.date), exceptionType: data.exceptionType, reason: data.reason || null, startTime: data.startTime ? timeToDate(data.startTime) : null, endTime: data.endTime ? timeToDate(data.endTime) : null };
-    const bookedConflicts = await prisma.appointmentSlot.count({ where: { doctorId, date: converted.date, bookedCount: { gt: 0 } } });
-    const exception = await scheduleRepository.createException(converted);
-    return { exception, bookedSlotConflicts: bookedConflicts };
+    const result = await prisma.$transaction(async (tx) => {
+      const [doctor, hospital, appointments] = await Promise.all([
+        tx.doctorProfile.findUnique({ where: { id: doctorId }, select: { firstName: true, lastName: true } }),
+        tx.hospital.findUnique({ where: { id: hospitalId }, select: { name: true } }),
+        tx.appointment.findMany({
+          where: { doctorId, hospitalId, appointmentDate: converted.date, status: { in: ACTIVE_APPOINTMENT_STATUSES } },
+          include: { patient: { select: { firstName: true, lastName: true, user: { select: { id: true, email: true, active: true } } } } },
+        }),
+      ]);
+      const affected = appointments.filter((appointment) => appointmentAffectedByException(appointment, converted));
+      const exception = await scheduleRepository.createException(converted, tx);
+      const doctorName = [doctor?.firstName, doctor?.lastName].filter(Boolean).join(' ') || 'your doctor';
+      const deliveries = affected.filter((appointment) => appointment.patient.user.active).map((appointment) => ({
+        userId: appointment.patient.user.id,
+        email: appointment.patient.user.email,
+        name: `${appointment.patient.firstName} ${appointment.patient.lastName}`.trim(),
+        message: exceptionMessage(appointment, converted, doctorName),
+      }));
+      if (deliveries.length) await tx.notification.createMany({ data: deliveries.map(({ userId, message }) => ({ userId, hospitalId, title: 'Doctor availability update', message, type: 'SCHEDULE' })) });
+      return { exception, bookedSlotConflicts: affected.length, notifiedPatients: deliveries.length, deliveries, hospitalName: hospital?.name || 'CareSync Hospital' };
+    });
+    await sendScheduleExceptionEmails(result.deliveries, result.hospitalName);
+    const { deliveries, hospitalName, ...response } = result;
+    return response;
   },
   async updateException(id, data, authorizedHospitalId) {
     const current = await scheduleRepository.findExceptionById(id);
