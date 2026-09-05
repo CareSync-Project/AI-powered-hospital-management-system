@@ -6,6 +6,7 @@ import { scheduleService } from '../../services/scheduleService';
 import { appointmentService } from '../../services/appointmentService';
 import { nurseService } from '../../services/nurseService';
 import { announcementService } from '../../services/announcementService';
+import { read, utils as xlsxUtils } from 'xlsx';
 
 const download = (name, rows) => {
   if (!rows.length) return;
@@ -19,10 +20,27 @@ const download = (name, rows) => {
   URL.revokeObjectURL(url);
 };
 
-const parseCsv = text => {
-  const [header, ...lines] = text.trim().split(/\r?\n/),
-    keys = header.split(',').map(x => x.trim());
-  return lines.filter(Boolean).map(line => Object.fromEntries(line.split(',').map((value, index) => [keys[index], value.trim()])));
+const parseStaffFile = async file => {
+  const workbook = read(await file.arrayBuffer(), { type: 'array' });
+  const sheet = workbook.Sheets[workbook.SheetNames[0]];
+  if (!sheet) throw new Error('The uploaded file does not contain a worksheet.');
+
+  const rawRows = xlsxUtils.sheet_to_json(sheet, { defval: '', raw: false });
+  const rows = rawRows.map(row => Object.fromEntries(
+    Object.entries(row).map(([key, value]) => [key.replace(/^\uFEFF/, '').trim(), String(value).trim()])
+  )).filter(row => Object.values(row).some(Boolean));
+
+  if (!rows.length) throw new Error('The uploaded file does not contain any staff rows.');
+  return rows;
+};
+
+const formatValidationErrors = error => {
+  if (!Array.isArray(error.details) || !error.details.length) return error.message || 'File upload failed.';
+  const issues = error.details.slice(0, 8).map(issue => {
+    const match = issue.path?.match(/^rows\.(\d+)\.(.+)$/);
+    return match ? `Row ${Number(match[1]) + 2}, ${match[2]}: ${issue.message}` : `${issue.path || 'file'}: ${issue.message}`;
+  });
+  return `${error.message}:\n${issues.join('\n')}${error.details.length > issues.length ? `\n…and ${error.details.length - issues.length} more issue(s).` : ''}`;
 };
 
 const audienceLabels = {
@@ -668,16 +686,24 @@ export default function ReviewAdminPanel({ section }) {
                 <div style={{ fontWeight: '600', color: '#005a60', fontSize: '0.875rem', marginBottom: '0.5rem' }}>Step 2: Upload Completed File</div>
                 <input
                   type="file"
-                  accept=".csv,text/csv"
+                  accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
                   onChange={async (event) => {
                     if (!event.target.files?.[0]) return;
                     try {
-                      const rows = parseCsv(await event.target.files[0].text());
+                      setMessage('Uploading and validating staff records…');
+                      const rows = await parseStaffFile(event.target.files[0]);
                       const result = (await adminReviewService.bulkImport(rows)).data;
-                      setMessage(`Bulk import completed: ${result.successful} created, ${result.failed} failed out of ${result.total}.`);
+                      const failures = result.rows.filter(row => row.status === 'FAILED');
+                      const failureDetails = failures.slice(0, 8).map(row => `${row.email || row.name}: ${row.error}`).join('\n');
+                      setMessage(
+                        `Bulk import completed: ${result.successful} created, ${result.failed} failed out of ${result.total}.` +
+                        (failureDetails ? `\n${failureDetails}${failures.length > 8 ? `\n…and ${failures.length - 8} more failure(s).` : ''}` : '')
+                      );
                       load();
                     } catch (err) {
-                      setMessage(err.message || 'File parsing failed.');
+                      setMessage(formatValidationErrors(err));
+                    } finally {
+                      event.target.value = '';
                     }
                   }}
                   style={{ fontSize: '0.85rem' }}
@@ -686,7 +712,7 @@ export default function ReviewAdminPanel({ section }) {
             </div>
 
             {message && (
-              <div style={{ marginTop: '1rem', padding: '0.75rem', borderRadius: '8px', backgroundColor: '#e0f2fe', color: '#0369a1', fontSize: '0.85rem', fontWeight: '600' }}>
+              <div style={{ marginTop: '1rem', padding: '0.75rem', borderRadius: '8px', backgroundColor: '#e0f2fe', color: '#0369a1', fontSize: '0.85rem', fontWeight: '600', whiteSpace: 'pre-line' }}>
                 {message}
               </div>
             )}
