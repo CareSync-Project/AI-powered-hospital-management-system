@@ -35,6 +35,7 @@ router.get('/doctors/:doctorId/exceptions', validate({ params: z.object({ doctor
 router.post('/doctors/:doctorId/exceptions', validate({ params: z.object({ doctorId: uuid }), body: scheduleExceptionSchema }), asyncHandler(managementScheduleController.createException));
 router.post('/doctors/:doctorId/generate-slots', validate({ params: z.object({ doctorId: uuid }), body: generateSlotsSchema }), asyncHandler(managementScheduleController.generate));
 router.post('/nurses', validate({ body: createNurseAccountSchema }), asyncHandler(adminController.createNurse));
+router.get('/patients', asyncHandler(reviewCorrectionController.patients));
 router.get('/nurses', asyncHandler(reviewCorrectionController.nurses));
 router.patch('/nurses/:nurseId/departments', validate({ params: z.object({ nurseId: uuid }), body: nurseDepartmentSchema }), asyncHandler(reviewCorrectionController.assignDepartment));
 router.patch('/appointments/:appointmentId/nurse', validate({ params: z.object({ appointmentId: uuid }), body: nurseAppointmentSchema }), asyncHandler(reviewCorrectionController.assignAppointment));

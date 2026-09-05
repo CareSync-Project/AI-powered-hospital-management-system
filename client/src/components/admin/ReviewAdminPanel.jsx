@@ -70,6 +70,7 @@ const reportTypeLabels = {
 export default function ReviewAdminPanel({ section }) {
   const [data, setData] = useState(null);
   const [nurses, setNurses] = useState([]);
+  const [patients, setPatients] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [doctors, setDoctors] = useState([]);
   const [filters, setFilters] = useState({});
@@ -77,6 +78,7 @@ export default function ReviewAdminPanel({ section }) {
 
   // Booking states for Appointments section
   const [selectedDoctor, setSelectedDoctor] = useState('');
+  const [selectedPatient, setSelectedPatient] = useState('');
   const [bookingDate, setBookingDate] = useState('');
   const [availableSlots, setAvailableSlots] = useState([]);
   const [selectedSlotId, setSelectedSlotId] = useState('');
@@ -110,6 +112,10 @@ export default function ReviewAdminPanel({ section }) {
       const nRes = await adminReviewService.nurses();
       setNurses(nRes.data?.data || nRes.data || []);
     } catch { /* nurses endpoint may not exist yet */ }
+    try {
+      const pRes = await adminReviewService.patients();
+      setPatients(pRes.data?.data || pRes.data || []);
+    } catch { /* patients endpoint may not exist yet */ }
     try {
       const dRes = await departmentService.listManaged();
       setDepartments(dRes.data?.data || dRes.data || []);
@@ -1017,6 +1023,17 @@ export default function ReviewAdminPanel({ section }) {
           </p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1rem' }}>
             <div>
+              <label style={{ fontSize: '0.8rem', fontWeight: '600', color: '#005a60', display: 'block', marginBottom: '0.25rem' }}>Patient</label>
+              <select
+                value={selectedPatient}
+                onChange={(e) => setSelectedPatient(e.target.value)}
+                style={{ width: '100%', padding: '0.6rem', borderRadius: '8px', border: '1px solid #cbd5e1' }}
+              >
+                <option value="">Select Patient...</option>
+                {patients.map(patient => <option key={patient.id} value={patient.id}>{patient.firstName} {patient.lastName} ({patient.user?.email})</option>)}
+              </select>
+            </div>
+            <div>
               <label style={{ fontSize: '0.8rem', fontWeight: '600', color: '#005a60', display: 'block', marginBottom: '0.25rem' }}>Doctor</label>
               <select 
                 style={{ width: '100%', padding: '0.6rem', borderRadius: '8px', border: '1px solid #cbd5e1' }}
@@ -1069,7 +1086,7 @@ export default function ReviewAdminPanel({ section }) {
               >
                 <option value="">{availableSlots.length ? 'Select Slot...' : 'No slots available'}</option>
                 {availableSlots.map(s => (
-                  <option key={s.id} value={s.id}>{s.startTime} - {s.endTime} ({s.status})</option>
+                  <option key={s.id} value={s.id}>{new Date(s.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' })} - {new Date(s.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' })}</option>
                 ))}
               </select>
             </div>
@@ -1090,13 +1107,28 @@ export default function ReviewAdminPanel({ section }) {
             <button 
               className="btn btn-primary"
               onClick={async () => {
-                if (!selectedSlotId || !bookingReason) {
-                  setMessage('Please select an available slot and provide a reason.');
+                if (!selectedPatient || !selectedSlotId || !bookingReason.trim()) {
+                  setMessage('Please select a patient, an available slot, and provide a reason.');
                   return;
                 }
                 try {
-                  await appointmentService.book({ slotId: selectedSlotId, reasonForVisit: bookingReason });
+                  const selectedSlot = availableSlots.find(slot => slot.id === selectedSlotId);
+                  if (!selectedSlot) throw new Error('The selected slot is no longer available.');
+                  await appointmentService.staffBook({
+                    patientId: selectedPatient,
+                    hospitalId: selectedSlot.hospitalId,
+                    departmentId: selectedSlot.departmentId,
+                    doctorId: selectedSlot.doctorId,
+                    appointmentSlotId: selectedSlot.id,
+                    appointmentDate: new Date(selectedSlot.date).toISOString().slice(0, 10),
+                    startTime: new Date(selectedSlot.startTime).toISOString().slice(11, 16),
+                    endTime: new Date(selectedSlot.endTime).toISOString().slice(11, 16),
+                    reasonForVisit: bookingReason.trim(),
+                    bookingMethod: 'STAFF'
+                  });
                   setMessage('Appointment scheduled successfully!');
+                  setSelectedSlotId('');
+                  setBookingReason('');
                   load();
                 } catch (err) {
                   setMessage(err.response?.data?.message || err.message || 'Scheduling failed');

@@ -2,6 +2,8 @@ import { appointmentService } from '../services/appointmentService.js';
 import { appointmentFiltersForAuth, getPatientProfileId, requireMatchingHospital } from '../services/authorizationService.js';
 import { auditService } from '../services/auditService.js';
 import { AppError } from '../middleware/errorHandler.js';
+import { notificationService } from '../services/notificationService.js';
+import prisma from '../config/prisma.js';
 
 export const appointmentController = {
   async list(request, response) {
@@ -20,6 +22,10 @@ export const appointmentController = {
       data.bookingMethod = 'STAFF';
     }
     const appointment = await appointmentService.create(data);
+    if (request.auth.role !== 'PATIENT') {
+      const patient = await prisma.patientProfile.findUnique({ where: { id: appointment.patientId }, select: { userId: true } });
+      if (patient) await notificationService.create({ userId: patient.userId, hospitalId: appointment.hospitalId, title: 'Appointment booked for you', message: `Appointment ${appointment.appointmentNumber} was booked for you by hospital staff.`, type: 'APPOINTMENT' });
+    }
     await auditService.record({ userId: request.auth.user.id, hospitalId: appointment.hospitalId, action: 'APPOINTMENT_CREATED', resourceType: 'Appointment', resourceId: appointment.id, request });
     response.status(201).json({ success: true, data: appointment });
   },

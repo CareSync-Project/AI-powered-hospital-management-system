@@ -15,5 +15,5 @@ export const scheduleRepository = {
   findExceptionById: (id, client = prisma) => client.scheduleException.findUnique({ where: { id }, include: { doctor: true } }),
   createException: (data, client = prisma) => client.scheduleException.create({ data }),
   updateException: (id, data, client = prisma) => client.scheduleException.update({ where: { id }, data }),
-  findSlots: (where, client = prisma) => client.appointmentSlot.findMany({ where, select: { id: true, doctorId: true, departmentId: true, date: true, startTime: true, endTime: true, capacity: true, bookedCount: true, status: true }, orderBy: { startTime: 'asc' } }),
+  findSlots: (where, client = prisma) => client.appointmentSlot.findMany({ where, select: { id: true, hospitalId: true, doctorId: true, departmentId: true, date: true, startTime: true, endTime: true, capacity: true, bookedCount: true, status: true }, orderBy: { startTime: 'asc' } }),
 };

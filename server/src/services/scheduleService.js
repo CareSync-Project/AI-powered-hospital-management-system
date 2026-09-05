@@ -191,11 +191,34 @@ export const appointmentSlotService = {
       const keys = new Set(candidates.map((item) => `${minutes(item.startTime)}-${minutes(item.endTime)}`));
       const retainedIds = existing.filter((item) => keys.has(`${minutes(item.startTime)}-${minutes(item.endTime)}`)).map((item) => item.id);
       await tx.appointmentSlot.updateMany({ where: { doctorId, date, bookedCount: 0, ...(retainedIds.length ? { id: { notIn: retainedIds } } : {}) }, data: { status: 'CLOSED' } });
+      if (retainedIds.length) await tx.appointmentSlot.updateMany({ where: { id: { in: retainedIds }, bookedCount: 0 }, data: { status: 'AVAILABLE' } });
       const result = await tx.appointmentSlot.createMany({ data: candidates, skipDuplicates: true });
       const slots = await scheduleRepository.findSlots({ doctorId, departmentId, date, status: { in: ['AVAILABLE', 'FULL'] } }, tx);
       return { generated: result.count, preservedBooked: existing.filter((item) => item.bookedCount > 0).length, conflicts: [], slots };
     });
   },
-  async listDoctor(doctorId, date) { return (await scheduleRepository.findSlots({ doctorId, date: dateAt(date), status: 'AVAILABLE' })).filter((slot) => slot.bookedCount < slot.capacity); },
-  async listDepartment(departmentId, date) { return (await scheduleRepository.findSlots({ departmentId, date: dateAt(date), status: 'AVAILABLE' })).filter((slot) => slot.bookedCount < slot.capacity); },
+  async ensureDoctor(doctorId, date) {
+    const targetDate = dateAt(date);
+    const dayOfWeek = DAYS[targetDate.getUTCDay()];
+    const schedules = await prisma.doctorSchedule.findMany({ where: { doctorId, dayOfWeek, active: true }, select: { departmentId: true, hospitalId: true } });
+    for (const schedule of schedules) await appointmentSlotService.generate(doctorId, schedule.departmentId, date, schedule.hospitalId);
+  },
+  async ensureDepartment(departmentId, date, hospitalId) {
+    const targetDate = dateAt(date);
+    const dayOfWeek = DAYS[targetDate.getUTCDay()];
+    const schedules = await prisma.doctorSchedule.findMany({
+      where: { departmentId, dayOfWeek, active: true, ...(hospitalId ? { hospitalId } : {}) },
+      select: { doctorId: true, hospitalId: true },
+      distinct: ['doctorId'],
+    });
+    for (const schedule of schedules) await appointmentSlotService.generate(schedule.doctorId, departmentId, date, schedule.hospitalId);
+  },
+  async listDoctor(doctorId, date) {
+    await appointmentSlotService.ensureDoctor(doctorId, date);
+    return (await scheduleRepository.findSlots({ doctorId, date: dateAt(date), status: 'AVAILABLE' })).filter((slot) => slot.bookedCount < slot.capacity);
+  },
+  async listDepartment(departmentId, date) {
+    await appointmentSlotService.ensureDepartment(departmentId, date);
+    return (await scheduleRepository.findSlots({ departmentId, date: dateAt(date), status: 'AVAILABLE' })).filter((slot) => slot.bookedCount < slot.capacity);
+  },
 };
