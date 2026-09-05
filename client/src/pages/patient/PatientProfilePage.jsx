@@ -2,9 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { patientService } from '../../services/patientService';
 import { patientCardService } from '../../services/patientCardService';
 import StatusBadge from '../../components/patient/StatusBadge';
-import { CreditCard, PlusCircle, CheckCircle2, AlertCircle, ShieldCheck } from 'lucide-react';
+import { CreditCard, PlusCircle, CheckCircle2, AlertCircle, ShieldCheck, LogOut } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
 export default function PatientProfilePage() {
+  const { logout } = useAuth();
   const [form, setForm] = useState(null);
   const [message, setMessage] = useState('');
   const [cards, setCards] = useState([]);
@@ -324,6 +326,16 @@ export default function PatientProfilePage() {
             {cardBusy ? 'Submitting...' : 'Submit Card for Verification'}
           </button>
         </form>
+      </section>
+
+      <section className="patient-mobile-signout" aria-labelledby="patient-signout-title">
+        <div>
+          <h2 id="patient-signout-title">Account session</h2>
+          <p>Sign out when you have finished using CareSync on this device.</p>
+        </div>
+        <button type="button" onClick={logout}>
+          <LogOut size={18} /> Sign Out
+        </button>
       </section>
     </div>
   );
