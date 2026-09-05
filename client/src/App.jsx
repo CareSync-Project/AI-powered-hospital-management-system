@@ -12,6 +12,7 @@ import OfflineBanner from './components/patient/OfflineBanner';
 import './index.css';
 import './patient.css';
 import './role-dashboard.css';
+import './symptom-chat.css';
 
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles }) => {

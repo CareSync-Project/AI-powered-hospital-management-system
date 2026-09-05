@@ -130,9 +130,9 @@ export default function SymptomAssessmentPage({ onBook }) {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', height: 'calc(100vh - 130px)', minHeight: '750px', width: '100%' }}>
+    <div className="symptom-chat-page" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', height: 'calc(100vh - 130px)', minHeight: '750px', width: '100%' }}>
       {/* Streamlined Top Header Bar */}
-      <div style={{
+      <div className="symptom-chat-toolbar" style={{
         padding: '0.9rem 1.5rem',
         backgroundColor: '#ffffff',
         border: '1px solid #e2e8f0',
@@ -226,7 +226,7 @@ export default function SymptomAssessmentPage({ onBook }) {
       </div>
 
       {/* Main Expansive Chat & History Area */}
-      <div style={{
+      <div className="symptom-chat-layout" style={{
         flex: 1,
         display: 'grid',
         gridTemplateColumns: showHistory ? '1fr 340px' : '1fr',
@@ -235,7 +235,7 @@ export default function SymptomAssessmentPage({ onBook }) {
         height: '100%'
       }}>
         {/* Full-Height Chat Stream Container */}
-        <div style={{
+        <div className="symptom-chat-card" style={{
           backgroundColor: '#ffffff',
           border: '1px solid #e2e8f0',
           borderRadius: '16px',
@@ -246,7 +246,7 @@ export default function SymptomAssessmentPage({ onBook }) {
           height: '100%'
         }}>
           {/* Scrollable Messages Stream */}
-          <div style={{
+          <div className="symptom-chat-messages" style={{
             flex: 1,
             overflowY: 'auto',
             padding: '1.75rem 2rem',
@@ -431,7 +431,7 @@ export default function SymptomAssessmentPage({ onBook }) {
           </div>
 
           {/* Quick Prompts Suggestions */}
-          <div style={{ padding: '0.65rem 1.5rem', backgroundColor: '#ffffff', borderTop: '1px solid #e2e8f0', display: 'flex', gap: '0.5rem', overflowX: 'auto' }}>
+          <div className="symptom-quick-prompts" style={{ padding: '0.65rem 1.5rem', backgroundColor: '#ffffff', borderTop: '1px solid #e2e8f0', display: 'flex', gap: '0.5rem', overflowX: 'auto' }}>
             {QUICK_PROMPTS.map((prompt) => (
               <button
                 key={prompt}
@@ -455,7 +455,7 @@ export default function SymptomAssessmentPage({ onBook }) {
           </div>
 
           {/* Symptom Tag Selector */}
-          <div style={{ padding: '0.45rem 1.5rem', backgroundColor: '#f8fafc', borderTop: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap' }}>
+          <div className="symptom-quick-tags" style={{ padding: '0.45rem 1.5rem', backgroundColor: '#f8fafc', borderTop: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap' }}>
             <span style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748b' }}>Quick Tags:</span>
             {SYMPTOM_TAGS.map((tag) => {
               const isSelected = selectedTags.includes(tag);
@@ -489,7 +489,7 @@ export default function SymptomAssessmentPage({ onBook }) {
           )}
 
           {/* Input Form Box */}
-          <form
+          <form className="symptom-chat-input"
             onSubmit={(e) => {
               e.preventDefault();
               handleSend();
@@ -538,7 +538,7 @@ export default function SymptomAssessmentPage({ onBook }) {
 
         {/* Assessment History Drawer */}
         {showHistory && (
-          <div style={{
+          <div className="symptom-history-drawer" style={{
             backgroundColor: '#ffffff',
             border: '1px solid #e2e8f0',
             borderRadius: '16px',

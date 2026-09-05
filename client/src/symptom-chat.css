@@ -1,0 +1,175 @@
+@media (max-width: 768px) {
+  .patient-shell--symptoms {
+    height: 100dvh;
+    min-height: 0 !important;
+    overflow: hidden !important;
+  }
+
+  .patient-dashboard-main--symptoms {
+    height: calc(100dvh - 69px);
+    padding: 0 !important;
+    overflow: hidden !important;
+  }
+
+  .patient-dashboard-header--symptoms {
+    display: none !important;
+  }
+
+  .patient-symptom-view {
+    min-height: 0;
+    height: 100%;
+  }
+
+  .symptom-chat-page {
+    height: 100% !important;
+    min-height: 0 !important;
+    gap: 0 !important;
+    background: #f8fafc;
+  }
+
+  .symptom-chat-toolbar {
+    flex: 0 0 auto;
+    padding: .65rem .75rem !important;
+    border-width: 0 0 1px !important;
+    border-radius: 0 !important;
+    flex-wrap: nowrap !important;
+  }
+
+  .symptom-chat-toolbar > div:first-child {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .symptom-chat-toolbar > div:first-child > div:last-child {
+    min-width: 0;
+  }
+
+  .symptom-chat-toolbar h3 {
+    max-width: 42vw;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: .95rem !important;
+  }
+
+  .symptom-chat-toolbar h3 + span,
+  .symptom-chat-toolbar h3 ~ span,
+  .symptom-chat-toolbar h3 + span + * {
+    display: none !important;
+  }
+
+  .symptom-chat-toolbar > div:first-child > div:last-child > div:last-child {
+    display: none;
+  }
+
+  .symptom-chat-toolbar > div:last-child {
+    flex: 0 0 auto;
+    gap: .35rem !important;
+  }
+
+  .symptom-chat-toolbar button {
+    min-height: 40px;
+    padding: .45rem .55rem !important;
+    font-size: .72rem !important;
+  }
+
+  .symptom-chat-layout,
+  .symptom-chat-card {
+    min-height: 0 !important;
+    height: 100% !important;
+  }
+
+  .symptom-chat-layout {
+    display: flex !important;
+    gap: 0 !important;
+    position: relative;
+  }
+
+  .symptom-chat-card {
+    width: 100%;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+
+  .symptom-chat-messages {
+    min-height: 0;
+    padding: .85rem .75rem !important;
+    gap: .85rem !important;
+    overscroll-behavior: contain;
+  }
+
+  .symptom-chat-messages > div {
+    max-width: 94% !important;
+  }
+
+  .symptom-chat-messages > div > div:last-child {
+    padding: .8rem .9rem !important;
+    font-size: .92rem !important;
+    line-height: 1.5 !important;
+  }
+
+  .symptom-quick-prompts {
+    flex: 0 0 auto;
+    padding: .45rem .65rem !important;
+    scrollbar-width: none;
+  }
+
+  .symptom-quick-prompts::-webkit-scrollbar {
+    display: none;
+  }
+
+  .symptom-quick-tags {
+    flex: 0 0 auto;
+    max-height: 76px;
+    padding: .4rem .65rem !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .symptom-quick-tags::-webkit-scrollbar {
+    display: none;
+  }
+
+  .symptom-quick-tags > * {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+
+  .symptom-chat-input {
+    flex: 0 0 auto;
+    padding: .6rem .65rem calc(.6rem + env(safe-area-inset-bottom)) !important;
+    gap: .5rem !important;
+  }
+
+  .symptom-chat-input input {
+    min-width: 0;
+    height: 46px;
+    padding: .7rem .85rem !important;
+    font-size: 16px !important;
+  }
+
+  .symptom-chat-input button {
+    width: 48px;
+    height: 46px;
+    padding: 0 !important;
+    justify-content: center;
+    flex: 0 0 48px;
+    font-size: 0 !important;
+  }
+
+  .symptom-chat-input button svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .symptom-history-drawer {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    width: 100%;
+    border: 0 !important;
+    border-radius: 0 !important;
+  }
+}
