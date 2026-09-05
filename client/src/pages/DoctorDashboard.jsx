@@ -484,7 +484,13 @@ export default function DoctorDashboard() {
                 <div style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: '600', marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                   Queue Overview
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.6rem' }}>
+                  <div style={{ padding: '0.75rem', backgroundColor: '#eff6ff', borderRadius: '8px', border: '1px solid #dbeafe' }}>
+                    <div style={{ fontSize: '0.7rem', color: '#1d4ed8', fontWeight: '600' }}>Scheduled</div>
+                    <div style={{ fontSize: '1.5rem', fontWeight: '800', color: '#1d4ed8' }}>
+                      {queue.filter(x => ['PENDING', 'CONFIRMED', 'CHECKED_IN', 'TRIAGED'].includes(x.status)).length}
+                    </div>
+                  </div>
                   <div style={{ padding: '0.75rem', backgroundColor: '#fff7ed', borderRadius: '8px', border: '1px solid #ffedd5' }}>
                     <div style={{ fontSize: '0.75rem', color: '#c2410c', fontWeight: '600' }}>Waiting</div>
                     <div style={{ fontSize: '1.5rem', fontWeight: '800', color: '#c2410c' }}>
@@ -504,7 +510,7 @@ export default function DoctorDashboard() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
                 {queue.length === 0 ? (
                   <div style={{ padding: '2rem 1rem', textAlign: 'center', color: '#94a3b8', fontSize: '0.85rem', border: '1px dashed #e2e8f0', borderRadius: '12px' }}>
-                    No patients currently in your queue.
+                    No patients are assigned to you for today.
                   </div>
                 ) : (
                   queue.map((item) => {
@@ -565,7 +571,7 @@ export default function DoctorDashboard() {
                   </div>
                   <h3 style={{ fontSize: '1.25rem', color: '#0f172a', fontWeight: '700', marginBottom: '0.5rem' }}>Select an Assigned Patient</h3>
                   <p style={{ fontSize: '0.875rem', maxWidth: '360px', margin: 0, color: '#64748b' }}>
-                    Choose a waiting or active patient from your queue list on the left to review vitals and record consultation findings.
+                    Choose an assigned patient from today’s worklist to review their visit status and clinical information. Consultation can begin once nursing triage moves the patient to Waiting.
                   </p>
                 </div>
               ) : (
