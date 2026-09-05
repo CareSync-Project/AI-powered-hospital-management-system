@@ -73,9 +73,9 @@ const AdminDashboard = () => {
   ];
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', backgroundColor: '#f8fafc' }}>
+    <div className="role-dashboard admin-dashboard" style={{ minHeight: '100vh', display: 'flex', backgroundColor: '#f8fafc' }}>
       {/* Sidebar */}
-      <aside style={{
+      <aside className="role-sidebar" style={{
         width: '260px',
         backgroundColor: 'var(--color-background)',
         borderRight: '1px solid rgba(255,255,255,0.1)',
@@ -157,8 +157,8 @@ const AdminDashboard = () => {
       </aside>
 
       {/* Main Content */}
-      <main style={{ flex: 1, padding: '2rem 3rem', overflowY: 'auto', backgroundColor: '#ffffff', color: '#0f172a' }}>
-        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+      <main className="role-dashboard-main" style={{ flex: 1, padding: '2rem 3rem', overflowY: 'auto', backgroundColor: '#ffffff', color: '#0f172a' }}>
+        <header className="role-dashboard-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
           <div>
             <h2 style={{ fontSize: '1.75rem', letterSpacing: '-0.02em', textTransform: 'capitalize', color: '#0f172a' }}>
               {activeTab.replace(/-/g, ' ')}

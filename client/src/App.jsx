@@ -11,6 +11,7 @@ import NurseDashboard from './pages/NurseDashboard';
 import OfflineBanner from './components/patient/OfflineBanner';
 import './index.css';
 import './patient.css';
+import './role-dashboard.css';
 
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles }) => {

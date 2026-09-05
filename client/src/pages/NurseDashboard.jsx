@@ -90,8 +90,8 @@ export default function NurseDashboard() {
   const formatDate = value => value ? new Date(value).toLocaleDateString(undefined, { year:'numeric', month:'short', day:'numeric' }) : 'Not scheduled';
 
   return (
-    <div className="clinical-app nurse-dashboard-shell">
-      <aside className="nurse-sidebar">
+    <div className="clinical-app nurse-dashboard-shell role-dashboard nurse-dashboard">
+      <aside className="nurse-sidebar role-sidebar">
         <div className="nurse-brand"><span><Stethoscope size={21}/></span><div>CareSync<small>NURSE PORTAL</small></div></div>
         <nav>
           <button className={activePage === 'patients' && view === 'TODAY' ? 'active' : ''} onClick={() => {setActivePage('patients');setView('TODAY')}}><CalendarDays size={18}/>Assigned Today{view === 'TODAY' && items.length > 0 && <b>{items.length}</b>}</button>
@@ -102,7 +102,7 @@ export default function NurseDashboard() {
         <div className="nurse-sidebar-profile"><span>{(user?.name || 'N').charAt(0).toUpperCase()}</span><div><strong>{user?.name || 'Nurse'}</strong><small>{user?.email}</small></div></div>
         <button className="nurse-logout" onClick={logout}><LogOut size={17}/>Sign out</button>
       </aside>
-      <header className="clinical-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <header className="clinical-header role-dashboard-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
           <small>Hospital clinical workflow</small>
             <h1><Stethoscope /> {activePage === 'announcements' ? 'Announcements' : activePage === 'booking' ? 'Book Appointment' : 'Nurse/Triage Dashboard'}</h1>
@@ -135,7 +135,7 @@ export default function NurseDashboard() {
         </div>
       </header>
 
-      <main className="clinical-layout">
+      <main className="clinical-layout role-dashboard-main">
         {activePage === 'patients' && <>
         <aside>
           <div className="clinical-metrics">
