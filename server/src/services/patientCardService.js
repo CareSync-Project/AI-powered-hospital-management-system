@@ -20,6 +20,20 @@ export const patientCardService = {
     const cards = await patientCardRepository.findByPatient(patientId);
     return cards.map(sanitizePatientCard);
   },
+  async listPendingForHospital(hospitalId) {
+    if (!hospitalId) throw new AppError('Administrator is not assigned to a hospital', 403);
+    const cards = await patientCardRepository.findPendingByHospital(hospitalId);
+    return cards.map(card => ({
+      ...sanitizePatientCard(card),
+      patient: {
+        id: card.patient.id,
+        firstName: card.patient.firstName,
+        lastName: card.patient.lastName,
+        phone: card.patient.phone,
+        email: card.patient.user.email,
+      },
+    }));
+  },
   async create(patientId, data) {
     await validateCardRelationship(patientId, data.hospitalId);
     const card = await patientCardRepository.create({

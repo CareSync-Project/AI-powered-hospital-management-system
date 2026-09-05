@@ -5,4 +5,6 @@ export const adminReviewService={
  assignNurseDepartment:(nurseId,departmentId,active=true)=>api.patch(`/admin/nurses/${nurseId}/departments`,{departmentId,active}),
  assignNurseAppointment:(appointmentId,nurseId,active=true)=>api.patch(`/admin/appointments/${appointmentId}/nurse`,{nurseId,active}),
  bulkImport:(rows)=>api.post('/admin/staff/bulk-import',{rows}),
+ pendingPatientCards:()=>api.get('/admin/patient-cards/pending'),
+ verifyPatientCard:(id,data)=>api.patch(`/admin/patient-cards/${id}/verification`,data),
 };

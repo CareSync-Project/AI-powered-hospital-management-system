@@ -15,6 +15,8 @@ import { reviewCorrectionController } from '../controllers/reviewCorrectionContr
 import { bulkStaffSchema, nurseAppointmentSchema, nurseDepartmentSchema, reportQuerySchema } from '../validators/reviewCorrectionValidators.js';
 import { announcementController } from '../controllers/announcementController.js';
 import { createAnnouncementSchema } from '../validators/announcementValidators.js';
+import { patientCardController } from '../controllers/patientCardController.js';
+import { verifyPatientCardSchema } from '../validators/patientCardValidators.js';
 
 const router = Router();
 router.use(authenticate, requireRole('ADMIN'));
@@ -40,6 +42,8 @@ router.get('/appointments', validate({ query: reportQuerySchema }), asyncHandler
 router.get('/analytics', asyncHandler(reviewCorrectionController.analytics));
 router.get('/reports', validate({ query: reportQuerySchema }), asyncHandler(reviewCorrectionController.report));
 router.post('/staff/bulk-import', validate({ body: bulkStaffSchema }), asyncHandler(reviewCorrectionController.bulk));
+router.get('/patient-cards/pending', asyncHandler(patientCardController.listPending));
+router.patch('/patient-cards/:id/verification', validate({ params: z.object({ id: uuid }), body: verifyPatientCardSchema }), asyncHandler(patientCardController.verify));
 router.get('/announcements', asyncHandler(announcementController.list));
 router.post('/announcements', validate({ body: createAnnouncementSchema }), asyncHandler(announcementController.create));
 export default router;

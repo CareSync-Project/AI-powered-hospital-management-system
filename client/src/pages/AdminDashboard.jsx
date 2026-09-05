@@ -19,10 +19,18 @@ const AdminDashboard = () => {
 
   const [allAppointments, setAllAppointments] = useState([]);
   const [idRequests, setIdRequests] = useState([]);
+  const [idRequestError, setIdRequestError] = useState('');
+  const [processingCardId, setProcessingCardId] = useState('');
 
   const loadData = async () => {
     try {
-      const res = await adminReviewService.analytics();
+      const [res, cardRes] = await Promise.all([
+        adminReviewService.analytics(),
+        adminReviewService.pendingPatientCards()
+      ]);
+      const pendingCards = cardRes.data || [];
+      setIdRequests(pendingCards);
+      setIdRequestError('');
       if (res.data) {
         setStats({
           totalPatients: res.data.totalPatients || 0,
@@ -30,11 +38,12 @@ const AdminDashboard = () => {
           totalAppointments: res.data.appointmentsMonth || 0,
           activeAppointments: res.data.pendingConfirmed || 0,
           avgConsultTime: 15,
-          pendingIdRequests: 0
+          pendingIdRequests: pendingCards.length
         });
       }
     } catch (err) {
       console.error('Failed to load overview analytics:', err);
+      setIdRequestError(err.message || 'Unable to load pending patient cards.');
     }
   };
 
@@ -42,21 +51,25 @@ const AdminDashboard = () => {
     loadData();
   }, []);
 
-  const handleApproveIdRequest = (req) => {
-    const newId = `PAT-${Date.now()}`;
-    const msgs = JSON.parse(localStorage.getItem('hospital_messages') || '[]');
-    msgs.push({
-      id: Date.now().toString(),
-      patientId: req.patientId,
-      title: 'New Hospital ID Generated',
-      content: `Your request for a Patient ID at ${req.hospitalName} has been approved. Your new ID is: ${newId}.`,
-      date: new Date().toLocaleDateString(),
-      read: false
-    });
-    localStorage.setItem('hospital_messages', JSON.stringify(msgs));
-    const requests = JSON.parse(localStorage.getItem('hospital_id_requests') || '[]');
-    localStorage.setItem('hospital_id_requests', JSON.stringify(requests.filter(r => r.id !== req.id)));
-    loadData();
+  const handleCardVerification = async (req, verificationStatus) => {
+    const rejectionReason = verificationStatus === 'REJECTED'
+      ? window.prompt('Enter the reason for rejecting this card:')
+      : undefined;
+    if (verificationStatus === 'REJECTED' && !rejectionReason?.trim()) return;
+
+    setProcessingCardId(req.id);
+    setIdRequestError('');
+    try {
+      await adminReviewService.verifyPatientCard(req.id, {
+        verificationStatus,
+        ...(rejectionReason ? { rejectionReason: rejectionReason.trim() } : {})
+      });
+      await loadData();
+    } catch (err) {
+      setIdRequestError(err.message || 'Card verification failed.');
+    } finally {
+      setProcessingCardId('');
+    }
   };
 
   const [activeTab, setActiveTab] = useState('overview');
@@ -310,8 +323,13 @@ const AdminDashboard = () => {
               <Mail size={20} color="var(--color-primary)" /> Pending Patient ID Requests
             </h3>
             <p style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem', marginBottom: '2rem' }}>
-              Patients have requested to register at this hospital. Approve to generate an ID and notify them automatically.
+              Review hospital and NHIS cards submitted by patients. Patients are notified automatically after approval or rejection.
             </p>
+            {idRequestError && (
+              <div style={{ color: '#b91c1c', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', padding: '0.75rem', marginBottom: '1rem' }}>
+                {idRequestError}
+              </div>
+            )}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               {idRequests.length === 0 ? (
                 <div style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem', textAlign: 'center', padding: '3rem 0', border: '1px dashed var(--glass-border)', borderRadius: '12px' }}>
@@ -321,18 +339,32 @@ const AdminDashboard = () => {
                 idRequests.map(req => (
                   <div key={req.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.5rem', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--glass-border)', borderRadius: '12px' }}>
                     <div>
-                      <strong style={{ fontSize: '1.125rem' }}>{req.patientName}</strong>
+                      <strong style={{ fontSize: '1.125rem' }}>{req.patient.firstName} {req.patient.lastName}</strong>
                       <div style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)', marginTop: '0.25rem' }}>
-                        Requested on: {req.date}
+                        {req.cardType === 'NHIS_CARD' ? 'NHIS Card' : 'Hospital Card'}: {req.cardNumber}
+                      </div>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', marginTop: '0.2rem' }}>
+                        {req.patient.email} · Submitted {new Date(req.createdAt).toLocaleString()}
                       </div>
                     </div>
-                    <button
-                      onClick={() => handleApproveIdRequest(req)}
-                      className="btn btn-primary hover-lift"
-                      style={{ padding: '0.5rem 1.5rem' }}
-                    >
-                      Generate &amp; Send ID
-                    </button>
+                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                      <button
+                        onClick={() => handleCardVerification(req, 'REJECTED')}
+                        disabled={processingCardId === req.id}
+                        className="btn btn-outline"
+                        style={{ padding: '0.5rem 1rem', color: '#b91c1c', borderColor: '#fecaca' }}
+                      >
+                        Reject
+                      </button>
+                      <button
+                        onClick={() => handleCardVerification(req, 'VERIFIED')}
+                        disabled={processingCardId === req.id}
+                        className="btn btn-primary hover-lift"
+                        style={{ padding: '0.5rem 1.25rem' }}
+                      >
+                        {processingCardId === req.id ? 'Processing…' : 'Verify Card'}
+                      </button>
+                    </div>
                   </div>
                 ))
               )}
